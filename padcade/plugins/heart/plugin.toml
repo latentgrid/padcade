@@ -1,0 +1,6 @@
+name = "Heart"
+kind = "scene"
+api = 1
+version = "1.0.0"
+colour = "#ff0000"
+about = "A heart beats and rests; tapping makes it beat faster."

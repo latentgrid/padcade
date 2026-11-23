@@ -1,0 +1,6 @@
+name = "Campfire"
+kind = "scene"
+api = 1
+version = "1.0.0"
+colour = "#ff9000"
+about = "A flickering campfire burns over glowing logs; a press flares it up and holding stokes it."

@@ -1,0 +1,429 @@
+name = "Soundboard"
+kind = "page"
+api = 1
+version = "1.4.0"
+colour = "#5fe07a"
+about = "Play clips from your banks and build songs on eight looping tracks."
+needs = ["Speaker"]
+button = "top3"
+buttons_stay_lit = true
+banks = true
+pad_actions = true
+thing = "Clip"
+things = "Clips"
+
+[actions]
+banks = "Shift · Banks"
+volume = "Volume"
+undo = "Undo"
+delete = "Delete"
+quantise = "Quantise"
+duplicate = "Duplicate song"
+click = "Click"
+sustain = "Sustain pedal"
+record = "Record on the first empty track"
+performance = "Record performance (hold for Takes)"
+takes = "Takes library"
+songs = "Track Select · Songs"
+play = "Stop Clip · Play / stop"
+volume_up = "Volume up"
+volume_down = "Volume down"
+stop = "Stop all sounds"
+next_bank = "Next bank"
+
+[settings.volume]
+label = "Volume when it starts"
+type = "range"
+min = 1
+max = 5
+default = 3
+
+[settings.pressure_sensitive]
+label = "Pressure sensitivity"
+type = "switch"
+default = true
+note = "Use each pad’s strike response. Turn this off to play soft and hard taps at the same level."
+
+[pad.mode]
+label = "When pressed"
+type = "choice"
+default = "once"
+choices = [["once", "Play once"], ["hold", "Play while held"], ["loop", "Loop until pressed again"]]
+
+[pad.dynamics]
+label = "Strike response"
+type = "choice"
+default = "auto"
+choices = [["auto", "Clip default"], ["velocity", "Soft to loud"], ["fixed", "Fixed level"]]
+
+[previous_buttons]
+right1 = "volume_up"
+right2 = "volume_down"
+right8 = "stop"
+bottom1 = "bank:0"
+bottom2 = "bank:1"
+
+[defaults]
+factory_banks = 17
+
+[defaults.buttons]
+left1 = "banks"
+left2 = "click"
+left3 = "undo"
+left4 = "delete"
+left5 = "quantise"
+left6 = "duplicate"
+left8 = "performance"
+bottom2 = "songs"
+bottom5 = "volume"
+bottom7 = "sustain"
+bottom8 = "play"
+right1 = "track:0"
+right2 = "track:1"
+right3 = "track:2"
+right4 = "track:3"
+right5 = "track:4"
+right6 = "track:5"
+right7 = "track:6"
+right8 = "track:7"
+
+[[defaults.banks]]
+name = "Drums"
+
+[defaults.banks.pads]
+"1,1" = {thing = "Kick", colour = "#ff9838"}
+"2,1" = {thing = "Snare", colour = "#ff9838"}
+"3,1" = {thing = "Closed hat", colour = "#ff9838"}
+"4,1" = {thing = "Open hat", colour = "#ff9838"}
+"5,1" = {thing = "Clap", colour = "#ff9838"}
+"6,1" = {thing = "Crash", colour = "#ff9838"}
+"7,1" = {thing = "Shaker", colour = "#ff9838"}
+"8,1" = {thing = "Ride", colour = "#ff9838"}
+"1,2" = {thing = "Classic kick", colour = "#ffc15b"}
+"2,2" = {thing = "Jam snare", colour = "#ffc15b"}
+"3,2" = {thing = "Jam closed hat", colour = "#ffc15b"}
+"4,2" = {thing = "Jam open hat", colour = "#ffc15b"}
+"5,2" = {thing = "Jam clap", colour = "#ffc15b"}
+"6,2" = {thing = "Jam crash", colour = "#ffc15b"}
+"7,2" = {thing = "Jam rimshot", colour = "#ffc15b"}
+"8,2" = {thing = "Jam tom", colour = "#ffc15b"}
+"1,3" = {thing = "Electric kick", colour = "#db8be3"}
+"2,3" = {thing = "Electric snare", colour = "#db8be3"}
+"3,3" = {thing = "Electric closed hat", colour = "#db8be3"}
+"4,3" = {thing = "Electric open hat", colour = "#db8be3"}
+"5,3" = {thing = "Electric clap", colour = "#db8be3"}
+"6,3" = {thing = "Electric rim", colour = "#db8be3"}
+"7,3" = {thing = "Electric shaker", colour = "#db8be3"}
+"8,3" = {thing = "Pulse bell", colour = "#db8be3"}
+"1,4" = {thing = "Deep kick", colour = "#b398ff"}
+"2,4" = {thing = "Sub kick", colour = "#b398ff"}
+"3,4" = {thing = "Punch kick", colour = "#b398ff"}
+"4,4" = {thing = "Click kick", colour = "#b398ff"}
+"5,4" = {thing = "Electric kick C1", colour = "#b398ff"}
+"6,4" = {thing = "Electric kick G1", colour = "#b398ff"}
+"7,4" = {thing = "Electric kick C2", colour = "#b398ff"}
+"8,4" = {thing = "Electric kick G2", colour = "#b398ff"}
+"1,5" = {thing = "Snap snare", colour = "#e89fab"}
+"2,5" = {thing = "Noise snare", colour = "#e89fab"}
+"3,5" = {thing = "Rim click", colour = "#e89fab"}
+"4,5" = {thing = "Snare flam", colour = "#e89fab"}
+"5,5" = {thing = "Hat double", colour = "#e89fab"}
+"6,5" = {thing = "Kick double", colour = "#e89fab"}
+"7,5" = {thing = "Claves", colour = "#e89fab"}
+"8,5" = {thing = "Cowbell", colour = "#e89fab"}
+"1,6" = {thing = "Floor tom", colour = "#62b8f5"}
+"2,6" = {thing = "Low tom", colour = "#62b8f5"}
+"3,6" = {thing = "Mid tom", colour = "#62b8f5"}
+"4,6" = {thing = "High tom", colour = "#62b8f5"}
+"5,6" = {thing = "Tom", colour = "#62b8f5"}
+"6,6" = {thing = "Low zap tom", colour = "#62b8f5"}
+"7,6" = {thing = "High zap tom", colour = "#62b8f5"}
+"1,7" = {thing = "Low bongo", colour = "#7bd48f"}
+"2,7" = {thing = "High bongo", colour = "#7bd48f"}
+"3,7" = {thing = "Low conga", colour = "#7bd48f"}
+"4,7" = {thing = "Open conga", colour = "#7bd48f"}
+"5,7" = {thing = "Mute conga", colour = "#7bd48f"}
+"6,7" = {thing = "Short guiro", colour = "#7bd48f"}
+"7,7" = {thing = "Low block", colour = "#7bd48f"}
+"8,7" = {thing = "High block", colour = "#7bd48f"}
+"1,8" = {thing = "Hat", colour = "#49bac4"}
+"2,8" = {thing = "Pedal hat", colour = "#49bac4"}
+"3,8" = {thing = "Splash", colour = "#49bac4"}
+"4,8" = {thing = "Ride bell", colour = "#49bac4"}
+"5,8" = {thing = "Tambourine", colour = "#49bac4"}
+"6,8" = {thing = "Mute triangle", colour = "#49bac4"}
+"7,8" = {thing = "Open triangle", colour = "#49bac4"}
+
+[[defaults.banks]]
+name = "Synth"
+family = "Synth"
+
+[defaults.banks.pads]
+"1,1" = {thing = "Studio bass C2", name = "C2", colour = "#bd9ffa"}
+"2,1" = {thing = "Studio bass D2", name = "D2", colour = "#8d61db"}
+"3,1" = {thing = "Studio bass E2", name = "E2", colour = "#8d61db"}
+"4,1" = {thing = "Studio bass F2", name = "F2", colour = "#8d61db"}
+"5,1" = {thing = "Studio bass G2", name = "G2", colour = "#8d61db"}
+"6,1" = {thing = "Studio bass A2", name = "A2", colour = "#8d61db"}
+"7,1" = {thing = "Studio bass B2", name = "B2", colour = "#8d61db"}
+"8,1" = {thing = "Studio bass C3", name = "C3", colour = "#bd9ffa"}
+"1,2" = {thing = "Studio bass Db2", name = "C♯2", colour = "#5f419c"}
+"2,2" = {thing = "Studio bass Eb2", name = "D♯2", colour = "#5f419c"}
+"4,2" = {thing = "Studio bass Gb2", name = "F♯2", colour = "#5f419c"}
+"5,2" = {thing = "Studio bass Ab2", name = "G♯2", colour = "#5f419c"}
+"6,2" = {thing = "Studio bass Bb2", name = "A♯2", colour = "#5f419c"}
+"8,2" = {thing = "Studio bass Db3", name = "C♯3", colour = "#5f419c"}
+"1,3" = {thing = "Jam bass C2", name = "C2", colour = "#ffbd79"}
+"2,3" = {thing = "Jam bass D2", name = "D2", colour = "#e27928"}
+"3,3" = {thing = "Jam bass E2", name = "E2", colour = "#e27928"}
+"4,3" = {thing = "Jam bass F2", name = "F2", colour = "#e27928"}
+"5,3" = {thing = "Jam bass G2", name = "G2", colour = "#e27928"}
+"6,3" = {thing = "Jam bass A2", name = "A2", colour = "#e27928"}
+"7,3" = {thing = "Jam bass B2", name = "B2", colour = "#e27928"}
+"8,3" = {thing = "Jam bass C3", name = "C3", colour = "#ffbd79"}
+"1,4" = {thing = "Jam bass Db2", name = "C♯2", colour = "#9c481e"}
+"2,4" = {thing = "Jam bass Eb2", name = "D♯2", colour = "#9c481e"}
+"4,4" = {thing = "Jam bass Gb2", name = "F♯2", colour = "#9c481e"}
+"5,4" = {thing = "Jam bass Ab2", name = "G♯2", colour = "#9c481e"}
+"6,4" = {thing = "Jam bass Bb2", name = "A♯2", colour = "#9c481e"}
+"8,4" = {thing = "Jam bass Db3", name = "C♯3", colour = "#9c481e"}
+"1,5" = {thing = "Jam pluck C4", name = "C4", colour = "#87edff"}
+"2,5" = {thing = "Jam pluck D4", name = "D4", colour = "#29aac9"}
+"3,5" = {thing = "Jam pluck E4", name = "E4", colour = "#29aac9"}
+"4,5" = {thing = "Jam pluck F4", name = "F4", colour = "#29aac9"}
+"5,5" = {thing = "Jam pluck G4", name = "G4", colour = "#29aac9"}
+"6,5" = {thing = "Jam pluck A4", name = "A4", colour = "#29aac9"}
+"7,5" = {thing = "Jam pluck B4", name = "B4", colour = "#29aac9"}
+"8,5" = {thing = "Jam pluck C5", name = "C5", colour = "#87edff"}
+"1,6" = {thing = "Jam pluck Db4", name = "C♯4", colour = "#1a718d"}
+"2,6" = {thing = "Jam pluck Eb4", name = "D♯4", colour = "#1a718d"}
+"4,6" = {thing = "Jam pluck Gb4", name = "F♯4", colour = "#1a718d"}
+"5,6" = {thing = "Jam pluck Ab4", name = "G♯4", colour = "#1a718d"}
+"6,6" = {thing = "Jam pluck Bb4", name = "A♯4", colour = "#1a718d"}
+"8,6" = {thing = "Jam pluck Db5", name = "C♯5", colour = "#1a718d"}
+
+[[defaults.banks]]
+name = "Effects"
+
+[defaults.banks.pads]
+"1,1" = {thing = "Rising sweep", colour = "#5b7bff"}
+"2,1" = {thing = "Falling sweep", colour = "#5b7bff"}
+"1,2" = {thing = "Noise burst", colour = "#ff5fc0"}
+"2,2" = {thing = "Metallic hit", colour = "#ff5fc0"}
+"3,2" = {thing = "Laser", colour = "#ff5fc0"}
+"1,3" = {thing = "Reverse cymbal", colour = "#5b7bff"}
+"2,3" = {thing = "Low impact", colour = "#5b7bff"}
+"3,3" = {thing = "Metallic shimmer", colour = "#5b7bff"}
+"4,3" = {thing = "Echo hit", colour = "#5b7bff"}
+
+[[defaults.banks]]
+name = "Memes"
+
+[defaults.banks.pads]
+"1,8" = {thing = "Airhorn"}
+"2,8" = {thing = "Sad trombone"}
+"3,8" = {thing = "Rimshot"}
+"4,8" = {thing = "Applause"}
+"5,8" = {thing = "Crickets"}
+"6,8" = {thing = "Record scratch"}
+"7,8" = {thing = "Drum roll"}
+"8,8" = {thing = "Buzzer"}
+"1,7" = {thing = "Boing"}
+"2,7" = {thing = "Laser"}
+"4,7" = {thing = "Ta-da"}
+"1,6" = {thing = "Synth airhorn"}
+"2,6" = {thing = "Sliding horn"}
+"3,6" = {thing = "Spring boing"}
+"4,6" = {thing = "Synth buzzer"}
+"5,6" = {thing = "Alternating buzzer"}
+"6,6" = {thing = "Slow cricket chirps"}
+"7,6" = {thing = "Short drum fill"}
+
+[[defaults.banks]]
+name = "Keys"
+
+[defaults.banks.pads]
+"1,1" = {name = "C2", thing = "Piano C2", colour = "#5fe07a", mode = "hold"}
+"2,1" = {name = "D2", thing = "Piano D2", colour = "#d9e9ff", mode = "hold"}
+"3,1" = {name = "E2", thing = "Piano E2", colour = "#d9e9ff", mode = "hold"}
+"4,1" = {name = "F2", thing = "Piano F2", colour = "#d9e9ff", mode = "hold"}
+"5,1" = {name = "G2", thing = "Piano G2", colour = "#d9e9ff", mode = "hold"}
+"6,1" = {name = "A2", thing = "Piano A2", colour = "#d9e9ff", mode = "hold"}
+"7,1" = {name = "B2", thing = "Piano B2", colour = "#d9e9ff", mode = "hold"}
+"1,2" = {name = "C♯2", thing = "Piano Db2", colour = "#7288bd", mode = "hold"}
+"2,2" = {name = "D♯2", thing = "Piano Eb2", colour = "#7288bd", mode = "hold"}
+"4,2" = {name = "F♯2", thing = "Piano Gb2", colour = "#7288bd", mode = "hold"}
+"5,2" = {name = "G♯2", thing = "Piano Ab2", colour = "#7288bd", mode = "hold"}
+"6,2" = {name = "A♯2", thing = "Piano Bb2", colour = "#7288bd", mode = "hold"}
+"1,3" = {name = "C3", thing = "Piano C3", colour = "#5fe07a", mode = "hold"}
+"2,3" = {name = "D3", thing = "Piano D3", colour = "#d9e9ff", mode = "hold"}
+"3,3" = {name = "E3", thing = "Piano E3", colour = "#d9e9ff", mode = "hold"}
+"4,3" = {name = "F3", thing = "Piano F3", colour = "#d9e9ff", mode = "hold"}
+"5,3" = {name = "G3", thing = "Piano G3", colour = "#d9e9ff", mode = "hold"}
+"6,3" = {name = "A3", thing = "Piano A3", colour = "#d9e9ff", mode = "hold"}
+"7,3" = {name = "B3", thing = "Piano B3", colour = "#d9e9ff", mode = "hold"}
+"1,4" = {name = "C♯3", thing = "Piano Db3", colour = "#7288bd", mode = "hold"}
+"2,4" = {name = "D♯3", thing = "Piano Eb3", colour = "#7288bd", mode = "hold"}
+"4,4" = {name = "F♯3", thing = "Piano Gb3", colour = "#7288bd", mode = "hold"}
+"5,4" = {name = "G♯3", thing = "Piano Ab3", colour = "#7288bd", mode = "hold"}
+"6,4" = {name = "A♯3", thing = "Piano Bb3", colour = "#7288bd", mode = "hold"}
+"1,5" = {name = "C4", thing = "Piano C4", colour = "#5fe07a", mode = "hold"}
+"2,5" = {name = "D4", thing = "Piano D4", colour = "#d9e9ff", mode = "hold"}
+"3,5" = {name = "E4", thing = "Piano E4", colour = "#d9e9ff", mode = "hold"}
+"4,5" = {name = "F4", thing = "Piano F4", colour = "#d9e9ff", mode = "hold"}
+"5,5" = {name = "G4", thing = "Piano G4", colour = "#d9e9ff", mode = "hold"}
+"6,5" = {name = "A4", thing = "Piano A4", colour = "#d9e9ff", mode = "hold"}
+"7,5" = {name = "B4", thing = "Piano B4", colour = "#d9e9ff", mode = "hold"}
+"1,6" = {name = "C♯4", thing = "Piano Db4", colour = "#7288bd", mode = "hold"}
+"2,6" = {name = "D♯4", thing = "Piano Eb4", colour = "#7288bd", mode = "hold"}
+"4,6" = {name = "F♯4", thing = "Piano Gb4", colour = "#7288bd", mode = "hold"}
+"5,6" = {name = "G♯4", thing = "Piano Ab4", colour = "#7288bd", mode = "hold"}
+"6,6" = {name = "A♯4", thing = "Piano Bb4", colour = "#7288bd", mode = "hold"}
+"1,7" = {name = "C5", thing = "Piano C5", colour = "#5fe07a", mode = "hold"}
+"2,7" = {name = "D5", thing = "Piano D5", colour = "#d9e9ff", mode = "hold"}
+"3,7" = {name = "E5", thing = "Piano E5", colour = "#d9e9ff", mode = "hold"}
+"4,7" = {name = "F5", thing = "Piano F5", colour = "#d9e9ff", mode = "hold"}
+"5,7" = {name = "G5", thing = "Piano G5", colour = "#d9e9ff", mode = "hold"}
+"6,7" = {name = "A5", thing = "Piano A5", colour = "#d9e9ff", mode = "hold"}
+"7,7" = {name = "B5", thing = "Piano B5", colour = "#d9e9ff", mode = "hold"}
+"1,8" = {name = "C♯5", thing = "Piano Db5", colour = "#7288bd", mode = "hold"}
+"2,8" = {name = "D♯5", thing = "Piano Eb5", colour = "#7288bd", mode = "hold"}
+"4,8" = {name = "F♯5", thing = "Piano Gb5", colour = "#7288bd", mode = "hold"}
+"5,8" = {name = "G♯5", thing = "Piano Ab5", colour = "#7288bd", mode = "hold"}
+"6,8" = {name = "A♯5", thing = "Piano Bb5", colour = "#7288bd", mode = "hold"}
+
+[[defaults.banks]]
+name = "Jam classics"
+
+[defaults.banks.pads]
+"1,8" = {thing = "Jam pluck C4", colour = "#3fd0ff"}
+"2,8" = {thing = "Jam pluck Eb4", colour = "#3fd0ff"}
+"3,8" = {thing = "Jam pluck F4", colour = "#3fd0ff"}
+"4,8" = {thing = "Jam pluck G4", colour = "#3fd0ff"}
+"5,8" = {thing = "Jam pluck Bb4", colour = "#3fd0ff"}
+"1,7" = {thing = "Jam pluck C5", colour = "#3fd0ff"}
+"2,7" = {thing = "Jam pluck Eb5", colour = "#3fd0ff"}
+"3,7" = {thing = "Jam pluck F5", colour = "#3fd0ff"}
+"4,7" = {thing = "Jam pluck G5", colour = "#3fd0ff"}
+"5,7" = {thing = "Jam pluck Bb5", colour = "#3fd0ff"}
+"1,3" = {thing = "Jam bass C2", colour = "#a070ff"}
+"2,3" = {thing = "Jam bass Eb2", colour = "#a070ff"}
+"3,3" = {thing = "Jam bass F2", colour = "#a070ff"}
+"4,3" = {thing = "Jam bass G2", colour = "#a070ff"}
+"5,3" = {thing = "Jam bass Bb2", colour = "#a070ff"}
+"1,2" = {thing = "Jam bass C3", colour = "#a070ff"}
+"2,2" = {thing = "Jam bass Eb3", colour = "#a070ff"}
+"3,2" = {thing = "Jam bass F3", colour = "#a070ff"}
+"4,2" = {thing = "Jam bass G3", colour = "#a070ff"}
+"5,2" = {thing = "Jam bass Bb3", colour = "#a070ff"}
+"1,1" = {thing = "Classic kick", colour = "#ff9838"}
+"2,1" = {thing = "Jam snare", colour = "#ff9838"}
+"3,1" = {thing = "Jam clap", colour = "#ff9838"}
+"4,1" = {thing = "Jam closed hat", colour = "#ff9838"}
+"5,1" = {thing = "Jam open hat", colour = "#ff9838"}
+"6,1" = {thing = "Jam rimshot", colour = "#ff9838"}
+"7,1" = {thing = "Jam tom", colour = "#ff9838"}
+"8,1" = {thing = "Jam crash", colour = "#ff9838"}
+
+[[defaults.banks]]
+name = "All chords"
+family = "Synth"
+
+[defaults.banks.pads]
+"1,1" = {thing = "Chord C3", name = "C", colour = "#ffdfb1", mode = "hold"}
+"2,1" = {thing = "Chord D3 major", name = "D", colour = "#da8e50", mode = "hold"}
+"3,1" = {thing = "Chord E3 major", name = "E", colour = "#da8e50", mode = "hold"}
+"4,1" = {thing = "Chord F", name = "F", colour = "#da8e50", mode = "hold"}
+"5,1" = {thing = "Chord G", name = "G", colour = "#da8e50", mode = "hold"}
+"6,1" = {thing = "Chord A3 major", name = "A", colour = "#da8e50", mode = "hold"}
+"7,1" = {thing = "Chord B3 major", name = "B", colour = "#da8e50", mode = "hold"}
+"8,1" = {thing = "Chord C", name = "C ↑", colour = "#ffdfb1", mode = "hold"}
+"1,2" = {thing = "Chord Db3 major", name = "C♯", colour = "#9b6039", mode = "hold"}
+"2,2" = {thing = "Chord Eb3 major", name = "D♯", colour = "#9b6039", mode = "hold"}
+"4,2" = {thing = "Chord Gb3 major", name = "F♯", colour = "#9b6039", mode = "hold"}
+"5,2" = {thing = "Chord Ab", name = "G♯", colour = "#9b6039", mode = "hold"}
+"6,2" = {thing = "Chord Bb", name = "A♯", colour = "#9b6039", mode = "hold"}
+"1,3" = {thing = "Chord C3 minor", name = "Cm", colour = "#a8ecff", mode = "hold"}
+"2,3" = {thing = "Chord Dm", name = "Dm", colour = "#599fc0", mode = "hold"}
+"3,3" = {thing = "Chord Em", name = "Em", colour = "#599fc0", mode = "hold"}
+"4,3" = {thing = "Chord F3 minor", name = "Fm", colour = "#599fc0", mode = "hold"}
+"5,3" = {thing = "Chord G3 minor", name = "Gm", colour = "#599fc0", mode = "hold"}
+"6,3" = {thing = "Chord Am", name = "Am", colour = "#599fc0", mode = "hold"}
+"7,3" = {thing = "Chord B3 minor", name = "Bm", colour = "#599fc0", mode = "hold"}
+"8,3" = {thing = "Chord Cm", name = "Cm ↑", colour = "#a8ecff", mode = "hold"}
+"1,4" = {thing = "Chord Db3 minor", name = "C♯m", colour = "#376b85", mode = "hold"}
+"2,4" = {thing = "Chord Eb3 minor", name = "D♯m", colour = "#376b85", mode = "hold"}
+"4,4" = {thing = "Chord Gb3 minor", name = "F♯m", colour = "#376b85", mode = "hold"}
+"5,4" = {thing = "Chord Ab3 minor", name = "G♯m", colour = "#376b85", mode = "hold"}
+"6,4" = {thing = "Chord Bb3 minor", name = "A♯m", colour = "#376b85", mode = "hold"}
+"1,5" = {thing = "Chord C", name = "C ↑", colour = "#e5bbff", mode = "hold"}
+"2,5" = {thing = "Chord D4 major", name = "D ↑", colour = "#a970c4", mode = "hold"}
+"3,5" = {thing = "Chord E4 major", name = "E ↑", colour = "#a970c4", mode = "hold"}
+"4,5" = {thing = "Chord F4 major", name = "F ↑", colour = "#a970c4", mode = "hold"}
+"5,5" = {thing = "Chord G4 major", name = "G ↑", colour = "#a970c4", mode = "hold"}
+"6,5" = {thing = "Chord A4 major", name = "A ↑", colour = "#a970c4", mode = "hold"}
+"7,5" = {thing = "Chord B4 major", name = "B ↑", colour = "#a970c4", mode = "hold"}
+"8,5" = {thing = "Chord C5 major", name = "C ↑↑", colour = "#e5bbff", mode = "hold"}
+"1,6" = {thing = "Chord Db4 major", name = "C♯ ↑", colour = "#744a91", mode = "hold"}
+"2,6" = {thing = "Chord Eb", name = "D♯ ↑", colour = "#744a91", mode = "hold"}
+"4,6" = {thing = "Chord Gb4 major", name = "F♯ ↑", colour = "#744a91", mode = "hold"}
+"5,6" = {thing = "Chord Ab4 major", name = "G♯ ↑", colour = "#744a91", mode = "hold"}
+"6,6" = {thing = "Chord Bb4 major", name = "A♯ ↑", colour = "#744a91", mode = "hold"}
+"1,7" = {thing = "Chord Cm", name = "Cm ↑", colour = "#bbf8bb", mode = "hold"}
+"2,7" = {thing = "Chord D4 minor", name = "Dm ↑", colour = "#679d72", mode = "hold"}
+"3,7" = {thing = "Chord E4 minor", name = "Em ↑", colour = "#679d72", mode = "hold"}
+"4,7" = {thing = "Chord F4 minor", name = "Fm ↑", colour = "#679d72", mode = "hold"}
+"5,7" = {thing = "Chord G4 minor", name = "Gm ↑", colour = "#679d72", mode = "hold"}
+"6,7" = {thing = "Chord A4 minor", name = "Am ↑", colour = "#679d72", mode = "hold"}
+"7,7" = {thing = "Chord B4 minor", name = "Bm ↑", colour = "#679d72", mode = "hold"}
+"8,7" = {thing = "Chord C5 minor", name = "Cm ↑↑", colour = "#bbf8bb", mode = "hold"}
+"1,8" = {thing = "Chord Db4 minor", name = "C♯m ↑", colour = "#446f4b", mode = "hold"}
+"2,8" = {thing = "Chord Eb4 minor", name = "D♯m ↑", colour = "#446f4b", mode = "hold"}
+"4,8" = {thing = "Chord Gb4 minor", name = "F♯m ↑", colour = "#446f4b", mode = "hold"}
+"5,8" = {thing = "Chord Ab4 minor", name = "G♯m ↑", colour = "#446f4b", mode = "hold"}
+"6,8" = {thing = "Chord Bb4 minor", name = "A♯m ↑", colour = "#446f4b", mode = "hold"}
+
+[[defaults.banks]]
+name = "Synth high"
+family = "Synth"
+
+[defaults.banks.pads]
+"1,1" = {thing = "Studio bass D3", name = "D3", colour = "#8d61db"}
+"2,1" = {thing = "Studio bass E3", name = "E3", colour = "#8d61db"}
+"3,1" = {thing = "Studio bass F3", name = "F3", colour = "#8d61db"}
+"4,1" = {thing = "Studio bass G3", name = "G3", colour = "#8d61db"}
+"5,1" = {thing = "Studio bass A3", name = "A3", colour = "#8d61db"}
+"6,1" = {thing = "Studio bass B3", name = "B3", colour = "#8d61db"}
+"7,1" = {thing = "Studio bass C4", name = "C4", colour = "#bd9ffa"}
+"8,1" = {thing = "Studio bass D4", name = "D4", colour = "#8d61db"}
+"1,2" = {thing = "Studio bass Eb3", name = "D♯3", colour = "#5f419c"}
+"3,2" = {thing = "Studio bass Gb3", name = "F♯3", colour = "#5f419c"}
+"4,2" = {thing = "Studio bass Ab3", name = "G♯3", colour = "#5f419c"}
+"5,2" = {thing = "Studio bass Bb3", name = "A♯3", colour = "#5f419c"}
+"7,2" = {thing = "Studio bass Db4", name = "C♯4", colour = "#5f419c"}
+"1,3" = {thing = "Jam bass D3", name = "D3", colour = "#e27928"}
+"2,3" = {thing = "Jam bass E3", name = "E3", colour = "#e27928"}
+"3,3" = {thing = "Jam bass F3", name = "F3", colour = "#e27928"}
+"4,3" = {thing = "Jam bass G3", name = "G3", colour = "#e27928"}
+"5,3" = {thing = "Jam bass A3", name = "A3", colour = "#e27928"}
+"6,3" = {thing = "Jam bass B3", name = "B3", colour = "#e27928"}
+"7,3" = {thing = "Jam bass C4", name = "C4", colour = "#ffbd79"}
+"8,3" = {thing = "Jam bass D4", name = "D4", colour = "#e27928"}
+"1,4" = {thing = "Jam bass Eb3", name = "D♯3", colour = "#9c481e"}
+"3,4" = {thing = "Jam bass Gb3", name = "F♯3", colour = "#9c481e"}
+"4,4" = {thing = "Jam bass Ab3", name = "G♯3", colour = "#9c481e"}
+"5,4" = {thing = "Jam bass Bb3", name = "A♯3", colour = "#9c481e"}
+"7,4" = {thing = "Jam bass Db4", name = "C♯4", colour = "#9c481e"}
+"1,5" = {thing = "Jam pluck D5", name = "D5", colour = "#29aac9"}
+"2,5" = {thing = "Jam pluck E5", name = "E5", colour = "#29aac9"}
+"3,5" = {thing = "Jam pluck F5", name = "F5", colour = "#29aac9"}
+"4,5" = {thing = "Jam pluck G5", name = "G5", colour = "#29aac9"}
+"5,5" = {thing = "Jam pluck A5", name = "A5", colour = "#29aac9"}
+"6,5" = {thing = "Jam pluck B5", name = "B5", colour = "#29aac9"}
+"7,5" = {thing = "Jam pluck C6", name = "C6", colour = "#87edff"}
+"8,5" = {thing = "Jam pluck D6", name = "D6", colour = "#29aac9"}
+"1,6" = {thing = "Jam pluck Eb5", name = "D♯5", colour = "#1a718d"}
+"3,6" = {thing = "Jam pluck Gb5", name = "F♯5", colour = "#1a718d"}
+"4,6" = {thing = "Jam pluck Ab5", name = "G♯5", colour = "#1a718d"}
+"5,6" = {thing = "Jam pluck Bb5", name = "A♯5", colour = "#1a718d"}
+"7,6" = {thing = "Jam pluck Db6", name = "C♯6", colour = "#1a718d"}

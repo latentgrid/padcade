@@ -1,0 +1,26 @@
+name = "Games"
+kind = "page"
+api = 1
+version = "1.0.0"
+colour = "#ff9838"
+about = "A menu of pad games: press one to play."
+button = "top2"
+thing = "Game"
+things = "Games"
+
+[actions]
+menu = "Back to the menu"
+restart = "Restart the game"
+
+[defaults.buttons]
+bottom1 = "menu"
+bottom2 = "restart"
+
+[defaults.pads]
+"1,5" = {thing = "moles"}
+"2,5" = {thing = "all_off"}
+"3,5" = {thing = "duel"}
+"4,5" = {thing = "mines"}
+"5,5" = {thing = "paint"}
+"6,5" = {thing = "sand"}
+"7,5" = {thing = "marble_maze"}

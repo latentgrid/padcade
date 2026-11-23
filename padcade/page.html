@@ -1,0 +1,1501 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Board</title>
+<style>
+/* Layout: three screens (Board, Plugins, Settings). On Board a row of the active pages sits above the device. In View
+   the device is an emulator and stands alone. In Edit the column beside it is what you clicked on the board (a pad, a
+   round button) or, with nothing clicked, the open plugin's own things and settings. */
+:root {
+  --bg: #f1f0f6; --surface: #ffffff; --ink: #1b1a24; --muted: #646279; --line: #dbd9e6; --soft: #e9e7f1;
+  --accent: #5340e6; --accent-ink: #ffffff; --good: #18875b; --warn: #a8650a; --bad: #b3261e;
+  --deck: #121118; --pad-off: #23222c; --deck-ink: #d9d6ea; --deck-muted: #9c98b5;
+  --display: "Space Grotesk", "Segoe UI", system-ui, sans-serif;
+  --text: "Inter", "Segoe UI", system-ui, sans-serif;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) { color-scheme: dark; --bg: #14131a; --surface: #1e1d27; --ink: #eceaf5; --muted: #a3a0b8; --line: #322f40; --soft: #2a2836;
+    --accent: #9684ff; --accent-ink: #14131a; --good: #4fd09b; --warn: #e6a94a; --bad: #ff8a80; }
+}
+:root[data-theme="dark"] { color-scheme: dark; --bg: #14131a; --surface: #1e1d27; --ink: #eceaf5; --muted: #a3a0b8; --line: #322f40; --soft: #2a2836;
+  --accent: #9684ff; --accent-ink: #14131a; --good: #4fd09b; --warn: #e6a94a; --bad: #ff8a80; }
+
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--bg); color: var(--ink); font: 15px/1.5 var(--text); padding-block: 0 48px;
+  padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); }
+h1, h2, h3 { font-family: var(--display); font-weight: 600; margin: 0; text-wrap: balance; }
+h2 { font-size: 18px; } h3 { font: 600 13.5px var(--text); color: var(--muted); }
+p { margin: 0; }
+button, input, select { font: inherit; color: inherit; }
+button { cursor: pointer; }
+button:disabled { opacity: .4; cursor: default; }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.wrap { max-width: 1170px; margin: 0 auto; }
+.muted { color: var(--muted); font-size: 13.5px; }
+
+.site-header { background: var(--surface); border-bottom: 1px solid var(--line); margin-inline: calc(-1 * max(16px, env(safe-area-inset-left))) calc(-1 * max(16px, env(safe-area-inset-right))); padding-inline: max(16px, env(safe-area-inset-left)) max(16px, env(safe-area-inset-right)); }
+main.wrap { padding-block: 24px; }
+.mast { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px 24px; margin-bottom: 18px; }
+.mast h1 { font-size: clamp(28px, 3vw, 42px); line-height: 1.12; letter-spacing: -.035em; }
+.mast p { margin-top: 4px; max-width: 60ch; }
+.bar { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 28px; padding-block: 16px 18px; }
+.bar .brand { display: flex; align-items: center; gap: 12px; font: 750 22px/1.2 var(--text); letter-spacing: -.06em; }
+.brand-mark { display: grid; grid-template: repeat(3, 1fr) / repeat(3, 1fr); gap: 2px; width: 26px; height: 26px; transform: rotate(-5deg); }
+.brand-mark i { background: #5741cd; border-radius: 2px; }
+.brand-mark i:nth-child(3), .brand-mark i:nth-child(8) { background: #c8b9ff; }
+.nav { display: flex; gap: 4px; }
+.nav button { border: 0; background: none; padding: 7px 14px; border-radius: 8px; color: var(--muted); font-weight: 600; }
+.nav button[aria-current="page"] { background: var(--ink); color: var(--bg); }
+.facts { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 16px; margin-left: auto; font-size: 13px; color: var(--muted); font-variant-numeric: tabular-nums; }
+.facts b { color: var(--ink); font-weight: 600; }
+.dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: var(--good); margin-right: 6px; flex: none; }
+.dot.bad { background: var(--bad); } .dot.none { background: var(--line); }
+[hidden] { display: none !important; }
+.pages { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+.pages button { display: flex; align-items: center; gap: 7px; padding: 7px 13px; border-radius: 999px; border: 1px solid var(--line); background: var(--surface); font-weight: 600; font-size: 13.5px; }
+.pages button i { width: 10px; height: 10px; border-radius: 50%; }
+.pages button[aria-current="true"] { background: var(--ink); color: var(--bg); border-color: var(--ink); }
+.subtabs { display: flex; gap: 2px; border-bottom: 1px solid var(--line); }
+.subtabs button { border: 0; background: none; padding: 8px 12px; color: var(--muted); font-weight: 600; border-bottom: 2px solid transparent; margin-bottom: -1px; }
+.subtabs button[aria-selected="true"] { color: var(--ink); border-bottom-color: var(--accent); }
+input[type="color"] { width: 34px; height: 28px; padding: 0; border: 0; background: none; cursor: pointer; }
+
+/* ---- Board */
+.work { display: grid; grid-template-columns: minmax(0,1.15fr) minmax(0,1fr); gap: 20px; align-items: start; }
+@media (max-width: 699px) { .work { grid-template-columns: minmax(0, 1fr); } }
+@media (min-width: 700px) { .deck { position: sticky; top: 12px; } }
+@media (min-width: 700px) and (max-width: 1000px) { .deck { padding: 12px; border-radius: 16px; } .board { gap: 4px; } .side { padding: 16px; gap: 16px; } }
+.deck { background: var(--deck); color: var(--deck-ink); border-radius: 20px; padding: 16px 16px 14px; display: grid; gap: 12px; box-shadow: 0 0 0 1px #2a2836; }
+.deck .top { display: flex; justify-content: space-between; gap: 10px; align-items: center; }
+.deck .top strong { font: 600 17px var(--display); color: #fff; margin-right: auto; }
+.deck .saved { color: #7fe0b0; font-size: 13px; font-weight: 600; }
+.deck .saved.bad { color: #ff9a90; }
+.deck .undo { border: 0; background: none; color: var(--deck-muted); font-weight: 600; font-size: 13.5px; padding: 5px 8px; }
+.mode { display: inline-flex; background: #262530; border-radius: 9px; padding: 3px; }
+.mode button { border: 0; background: none; color: var(--deck-muted); padding: 5px 16px; border-radius: 7px; font-weight: 600; font-size: 13.5px; }
+.mode button[aria-pressed="true"] { background: #f1f0f6; color: #121118; }
+.board { display: grid; grid-template-columns: repeat(10, minmax(0, 1fr)); gap: 5px; width: 100%; max-width: 500px; margin-inline: auto; touch-action: none; container-type: inline-size; }
+.board span.gap { aspect-ratio: 1.1; }
+.cell { position: relative; border: 0; padding: 0; background: var(--pad-off); border-radius: 6px; aspect-ratio: 1.1; min-width: 0; overflow: hidden;
+  font: 600 8.5px/1.15 var(--text); font-size: clamp(7px, 2cqw, 10px); letter-spacing: -.02em; color: #0e0d14; display: grid; place-items: center; text-align: center; }
+.cell.round { background: transparent !important; }
+.cell.round b { position: relative; z-index: 1; }
+.cell.round:has(b:not(:empty))::before { inset: 4%; }
+.cell.round::before { content: ''; position: absolute; inset: 20%; border-radius: 50%; background: var(--led, var(--pad-off)); pointer-events: none; }
+.cell b { display: block; padding: 0 1px; overflow: hidden; max-height: 100%; font-weight: 600; font-size: calc(1em * var(--fit, 1)); overflow-wrap: anywhere; hyphens: auto; pointer-events: none; }
+.board.editing .cell.finger { background: none !important; outline: 2px dashed #8a87a0; outline-offset: -3px; color: #b9b6cc; cursor: not-allowed; }
+.banks .crumb-text { color: var(--deck-muted); font-size: 13px; align-self: center; }
+.seg { display: inline-flex; background: var(--bg); border: 1px solid var(--line); border-radius: 9px; padding: 3px; justify-self: start; }
+.seg button { border: 0; background: none; padding: 5px 14px; border-radius: 7px; font-weight: 600; font-size: 13.5px; color: var(--muted); }
+.seg button[aria-pressed="true"] { background: var(--ink); color: var(--bg); }
+.cell.holds::before { content: ''; position: absolute; bottom: 3px; right: 3px; width: 5px; height: 5px; border-radius: 50%; background: #0e0d14; opacity: .75; }
+.cell.more::after { content: ''; position: absolute; top: 0; right: 0; border: 5px solid #0e0d14; border-left-color: transparent; border-bottom-color: transparent; }
+.deck-library { display: flex; gap: 8px 12px; align-items: center; flex-wrap: wrap; }
+.deck-library:has(.banks[hidden]):has(.deck-tools:empty) { display: none; }
+.deck-tools { margin-left: auto; }
+.deck-tools button { color: #f3efff; background: transparent; border: 1px solid #625d70; font: 600 13px var(--text); padding: 6px 12px; border-radius: 7px; }
+.banks { display: flex; flex-wrap: wrap; gap: 6px; }
+.banks button { border: 0; background: #262530; color: var(--deck-muted); padding: 5px 13px; border-radius: 999px; font-weight: 600; font-size: 13px; }
+.banks button[aria-pressed="true"] { background: #c8b9ff; color: #121118; }
+.banks button.add { background: none; box-shadow: inset 0 0 0 1px #3a3848; }
+.cell.hl { box-shadow: 0 0 0 3px #ffffffcc; }
+.board.editing:not(.whole) .cell:not(.bound):not(.round) { background: none !important; box-shadow: inset 0 0 0 1px #3a3848; }
+.board.editing .cell.round:not(.bound)::before { background: none !important; box-shadow: inset 0 0 0 2px #3a3848; }
+.board.editing.whole .cell:not(.round) { box-shadow: none; background: #1b1a23; cursor: default; }
+.board.editing .cell.sel, .cell.down { box-shadow: 0 0 0 3px #fff !important; }
+.board.editing .cell.over { box-shadow: 0 0 0 3px var(--accent) !important; }
+.board.painting .cell:not(.round) { cursor: crosshair; box-shadow: inset 0 0 0 1px #2c2a38; }
+.board.painting .cell.round { opacity: .25; }
+.deck .foot { display: flex; justify-content: space-between; gap: 16px; font-size: 13px; color: var(--deck-muted); min-height: 2.6em; }
+.deck .foot span:last-child { overflow-wrap: anywhere; }
+
+.side { background: var(--surface); border: 1px solid var(--line); border-radius: 16px; padding: 20px; display: grid; gap: 20px; min-width: 0; }
+.side header { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; }
+.crumb { font: 600 18px var(--display); }
+.crumb small { font: 500 14px var(--text); color: var(--muted); }
+.group { display: grid; gap: 10px; }
+.field { display: grid; grid-template-columns: minmax(96px, 150px) minmax(0, 1fr); gap: 6px 14px; align-items: center; }
+.field > :first-child { color: var(--muted); font-size: 14px; }
+@media (max-width: 480px) { .field { grid-template-columns: minmax(0, 1fr); } }
+input[type="text"], select { background: var(--bg); border: 1px solid var(--line); border-radius: 8px; padding: 7px 10px; width: 100%; }
+input[type="range"] { width: 100%; accent-color: var(--accent); }
+.act { background: var(--accent); color: var(--accent-ink); border: 0; border-radius: 9px; padding: 8px 14px; font-weight: 600; }
+.quiet { background: none; border: 1px solid var(--line); border-radius: 9px; padding: 7px 12px; }
+.link { background: none; border: 0; padding: 0; color: var(--accent); font-weight: 600; }
+.pair { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+
+.things { display: grid; grid-template-columns: repeat(auto-fill, minmax(136px, 1fr)); gap: 8px; }
+.thing { display: flex; align-items: center; gap: 8px; min-width: 0; border: 1px solid var(--line); border-radius: 10px; padding: 8px 8px 8px 10px; background: var(--surface); text-align: left; }
+.thing[draggable="true"] { cursor: grab; }
+.thing > i { width: 12px; height: 12px; border-radius: 3px; flex: none; }
+.thing canvas { width: 28px; height: 28px; border-radius: 4px; flex: none; background: #121118; }
+.thing .label { flex: 1; min-width: 0; }
+.thing .label div { font-weight: 600; font-size: 13.5px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.thing .label small { color: var(--muted); font-size: 12px; }
+.thing .go { border: 0; background: var(--soft); border-radius: 50%; width: 26px; height: 26px; padding: 0; font-size: 10px; flex: none; }
+.thing.loose { border-style: dashed; }
+.kind h3 { font-size: 12.5px; }
+.slot { border: 1px solid var(--line); border-radius: 12px; padding: 12px 14px 14px; display: grid; gap: 10px; }
+.slot > h3 { font: 600 15px var(--display); color: var(--ink); }
+.seg button:disabled { opacity: .45; }
+.slot > header { display: grid; gap: 8px; justify-items: start; }
+.slot > header h3 { font: 600 15px var(--display); color: var(--ink); }
+.slot .seg { justify-self: start; }
+.slot .field, .field.tight { grid-template-columns: 108px minmax(0, 1fr); gap: 6px 10px; }
+.field.tight { padding-inline: 15px; }
+.field.tight.plain { padding-inline: 0; }
+.field label { color: var(--muted); font-size: 14px; }
+.field.tight .swatches { gap: 4px; flex-wrap: nowrap; }
+.field.tight .swatches button, .field.tight input[type="color"] { flex: 0 1 22px; min-width: 0; width: auto; height: 22px; border-radius: 6px; }
+.device { display: flex; align-items: center; gap: 8px; min-width: 0; width: 100%; min-height: 38px; text-align: left; background: var(--bg); border: 1px solid var(--line); border-radius: 8px; padding: 4px 10px; }
+.device i { width: 12px; height: 12px; border-radius: 3px; flex: none; }
+.device .label { flex: 1; min-width: 0; display: grid; line-height: 1.25; }
+.device b { font-weight: 600; font-size: 13.5px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.device small { color: var(--muted); font-size: 11.5px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.device::after { content: "▾"; color: var(--muted); font-size: 12px; flex: none; }
+.device[aria-expanded="true"]::after { content: "▴"; }
+.device.none { border-style: dashed; color: var(--accent); }
+.inlinepick { border: 1px solid var(--line); border-radius: 10px; padding: 10px; background: var(--bg); }
+.inlinepick .results { max-height: 270px; overflow-y: auto; }
+.work.alone { grid-template-columns: minmax(0, 600px); justify-content: center; }
+.work.alone .side { display: none; }
+.finders { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+.finders input, .finders select:only-of-type { grid-column: 1 / -1; }
+.browser.rows .things { grid-template-columns: minmax(0, 1fr); gap: 0; }
+.browser.rows .thing { padding: 7px 8px; border: 0; border-top: 1px solid var(--line); border-radius: 0; background: none; }
+.browser.rows .thing:first-child { border-top: 0; }
+.browser.rows .thing:hover { background: color-mix(in srgb, var(--accent) 10%, transparent); border-radius: 6px; }
+.browser.rows .thing.picked { outline: 0; background: color-mix(in srgb, var(--accent) 16%, transparent); box-shadow: inset 3px 0 0 var(--accent); }
+.browser.rows .thing .label { display: flex; gap: 10px; align-items: baseline; justify-content: space-between; }
+.browser.rows .thing .label div { min-width: 0; }
+.browser.rows .thing .label small { flex: none; white-space: nowrap; }
+.thing small.on { color: var(--accent); }
+.amount { display: flex; gap: 8px; align-items: center; }
+.amount input[type="number"] { width: 4.6em; flex: none; background: var(--bg); border: 1px solid var(--line); border-radius: 8px; padding: 5px 6px; font-variant-numeric: tabular-nums; }
+.amount span { color: var(--muted); font-size: 13.5px; }
+.muted a { color: var(--accent); font-weight: 600; }
+.titled { display: flex; align-items: center; gap: 7px; }
+.titled, .field { position: relative; }
+.info { display: inline-grid; place-items: center; width: 17px; height: 17px; flex: none; margin-left: 6px; border: 1px solid color-mix(in srgb, var(--muted) 60%, transparent); border-radius: 50%; color: var(--muted); font: 600 11px/1 var(--text); cursor: help; }
+.info:hover, .info:focus { color: var(--ink); border-color: var(--ink); }
+.titled .info { margin-left: 0; }
+.info .tip { display: none; position: absolute; left: 0; top: calc(100% + 4px); z-index: 6; width: max-content; max-width: min(440px, calc(100vw - 48px)); padding: 10px 12px; border-radius: 9px; background: var(--ink); color: var(--bg); font: 400 13px/1.45 var(--text); text-align: left; cursor: default; box-shadow: 0 6px 20px #0005; }
+.info:hover .tip, .info:focus .tip, .info:focus-within .tip { display: block; }
+.info .tip a { color: inherit; font-weight: 600; }
+.peek { display: flex; gap: 12px; align-items: center; }
+.peek canvas { width: 64px; height: 64px; border-radius: 6px; background: #121118; flex: none; }
+.thing[aria-pressed="true"], .thing[aria-current="true"] { border-color: var(--accent); background: color-mix(in srgb, var(--accent) 9%, transparent); }
+.thing[aria-pressed="false"] .label, .thing[aria-pressed="false"] > i { opacity: .45; }
+.drop { border: 1.5px dashed var(--line); border-radius: 10px; padding: 12px; display: grid; gap: 2px; justify-items: start; background: none; text-align: left; }
+.drop.over { border-color: var(--accent); background: color-mix(in srgb, var(--accent) 8%, transparent); }
+.swatches { display: flex; gap: 6px; flex-wrap: wrap; }
+.swatches button { width: 26px; height: 26px; border-radius: 7px; border: 2px solid transparent; padding: 0; box-shadow: inset 0 0 0 1px var(--line); }
+.swatches button[aria-pressed="true"] { border-color: var(--ink); }
+.tabsrow { display: flex; flex-wrap: wrap; gap: 6px; }
+.tabsrow button { border: 1px solid var(--line); background: none; border-radius: 999px; padding: 5px 12px; font-weight: 600; font-size: 13.5px; }
+.tabsrow button[aria-pressed="true"] { background: var(--ink); color: var(--bg); border-color: var(--ink); }
+.tabsrow button.add { border-style: dashed; color: var(--muted); font-weight: 500; }
+.frames { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+.frames button { border: 2px solid transparent; background: none; padding: 0; border-radius: 6px; line-height: 0; }
+.frames button[aria-pressed="true"] { border-color: var(--accent); }
+.frames canvas { width: 36px; height: 36px; border-radius: 4px; background: #121118; }
+
+/* ---- Plugins and Settings */
+.sheet { background: var(--surface); border: 1px solid var(--line); border-radius: 16px; padding: 22px; display: grid; gap: 20px; }
+.list { display: grid; }
+.item { display: grid; grid-template-columns: 14px minmax(0, 1fr) auto auto; gap: 14px; align-items: center; padding: 12px 0; border-top: 1px solid var(--line); }
+.item:first-child { border-top: 0; }
+.item .sw { width: 14px; height: 14px; border-radius: 50%; }
+.item .name { font-weight: 600; }
+.item .state { font-size: 13px; color: var(--muted); white-space: nowrap; display: flex; align-items: center; }
+.item .err { color: var(--bad); font-size: 13.5px; }
+@media (any-pointer: fine) { body:not(.keys) .move-pad { display: none; } }
+.switch { position: relative; width: 38px; height: 22px; border-radius: 11px; border: 0; background: var(--line); padding: 0; flex: none; }
+.switch::after { content: ""; position: absolute; top: 3px; left: 3px; width: 16px; height: 16px; border-radius: 50%; background: var(--surface); transition: left .12s; }
+.switch[aria-checked="true"] { background: var(--accent); }
+.switch[aria-checked="true"]::after { left: 19px; }
+@media (max-width: 560px) { .item { grid-template-columns: 14px minmax(0, 1fr) auto; } .item .state { grid-column: 2; } #flat { grid-column: 2 / -1; justify-self: start; } }
+@media (prefers-reduced-motion: reduce) { .switch::after { transition: none; } }
+.toast { position: fixed; left: 50%; bottom: calc(18px + env(safe-area-inset-bottom, 0px)); transform: translateX(-50%); background: var(--ink); color: var(--bg);
+  padding: 8px 14px; border-radius: 9px; font-size: 14px; max-width: calc(100% - 32px); }
+
+/* ---- beyond the mock: picking by tap, the phone, the painter's extras */
+.thing.picked { outline: 2px solid var(--accent); outline-offset: 1px; }
+.board.placing .cell { cursor: copy; }
+.cell { touch-action: none; user-select: none; -webkit-user-select: none; }
+.thing { cursor: pointer; }
+.note { background: color-mix(in srgb, var(--accent) 9%, transparent); border-radius: 10px; padding: 10px 12px; display: grid; gap: 8px; }
+input[type="password"] { background: var(--bg); border: 1px solid var(--line); border-radius: 8px; padding: 7px 10px; width: 100%; }
+@media (max-width: 699px) {
+  .work.editing .deck { border-radius: 0 0 20px 20px; margin-inline: -16px; padding: 10px 16px; }
+  .board { gap: 3px; }
+  .deck .top { flex-wrap: wrap; gap: 6px; }
+  .cell b { max-width: 100%; }
+  .work.editing .deck .foot { min-height: 1.5em; }
+  .work.editing .deck #hint { display: none; }
+  .side, .sheet { padding: 16px; }
+  .bar { gap: 8px 16px; padding-block: 12px; }
+  .bar .brand { font-size: 20px; }
+  .brand-mark { width: 20px; height: 20px; }
+  .facts { margin-left: 0; width: 100%; }
+}
+.board .cell.round b { white-space: pre-line; font-size: clamp(6px, 1.85cqw, 10px); line-height: 1.05; }
+.banks button:disabled { cursor: default; opacity: .65; }
+</style>
+<script>try { const chosen = localStorage.getItem('theme'); if (chosen) document.documentElement.dataset.theme = chosen; } catch {}  // (before the page is drawn: no flash of the other look)</script>
+</head>
+<body>
+<header class="site-header"><div class="wrap bar">
+  <div class="brand"><span class="brand-mark" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></span><span id="title"></span></div>
+  <nav class="nav" id="nav" aria-label="Screens"></nav>
+  <div class="facts" id="facts" hidden>
+    <span id="simulator-state" title="A simulator: sound plays in this browser" hidden>Simulator</span><span id="hardware-state" hidden></span><span id="battery-state" hidden></span>
+  </div>
+</div></header>
+
+<main class="wrap">
+  <section class="screen" id="screen-board">
+    <div class="mast"><div><h1 id="instrument"></h1><p class="muted" id="instrument-about"></p></div>
+      <nav class="pages" id="pages" aria-label="Board pages"></nav></div>
+    <div class="work" id="work">
+      <div class="deck">
+        <div class="top"><strong id="page-name"></strong>
+          <span class="saved" id="saved" role="status" hidden></span>
+          <button class="undo" id="undo" hidden>Undo</button>
+          <div class="mode" role="group" aria-label="What a click on the board does">
+            <button id="mode-view" aria-pressed="true">View</button><button id="mode-edit" aria-pressed="false">Edit layout</button>
+          </div>
+        </div>
+        <div class="board" id="board" role="group" aria-label="Playable pads and controls"></div>
+        <div class="deck-library"><div class="banks" id="banks" aria-label="The banks of this page" hidden></div><div class="deck-tools" id="deck-tools"></div></div>
+        <div class="foot"><span id="hint"></span><span id="where"></span></div>
+      </div>
+      <aside class="side" id="side"></aside>
+    </div>
+  </section>
+
+  <section class="screen" id="screen-plugins" hidden>
+    <div class="sheet">
+      <header class="pair" style="justify-content: space-between">
+        <div class="titled"><h2>Plugins</h2><span class="info" tabindex="0" aria-label="About plugins">i<span class="tip">Every page, game and scene is a plugin: a folder with a description and a Python file. To make your own, copy one, change it, and add it here as a .zip.</span></span></div>
+        <button class="act" id="add-plugin">Add a plugin (.zip)</button>
+      </header>
+      <div class="tabsrow" id="kinds"></div>
+      <div class="group"><h3>Came with the board: an update replaces them</h3><div class="list" id="shipped"></div></div>
+      <div class="group"><h3>Added on this board: an update leaves them alone</h3><div class="list" id="yours"></div></div>
+    </div>
+  </section>
+
+  <section class="screen" id="screen-settings" hidden>
+    <div class="sheet">
+      <h2>Settings</h2>
+      <div class="group" style="max-width: 520px">
+        <div class="field"><label for="bright">Pad brightness</label><input type="range" id="bright" min="10" max="100"></div>
+        <div class="field"><label for="sleep">Pads go dark after</label><select id="sleep"><option value="0">Never</option><option value="10">10 minutes untouched</option><option value="30">30 minutes untouched</option></select></div>
+        <div class="field" id="charge-row" hidden><label for="limit">Charge the battery to</label><select id="limit"><option value="80">80 % (battery lasts longer)</option><option value="100">100 %</option></select></div>
+        <p class="muted" id="charge-note" hidden>100 % counts once the battery board has been switched off and on again.</p>
+      </div>
+      <div class="group" style="max-width: 520px">
+        <h3>Look of this page</h3>
+        <div class="field"><label for="theme">Colours</label><select id="theme"><option value="">As this device is set</option><option value="light">Light</option><option value="dark">Dark</option></select></div>
+        <p class="muted">Kept in this browser only.</p>
+      </div>
+      <div class="group" style="max-width: 520px"><div class="titled"><h3>Password for this page</h3><span class="info" tabindex="0" aria-label="About the password">i<span class="tip">Without a password, anyone on your network can play and manage the board. A password locks the whole page. Open the page for playing afterwards, and the password is only asked for managing the board: plugins, connections, updates and resets.</span></span></div>
+        <button class="quiet" id="admin-login" hidden>Sign in to manage the board</button>
+        <div id="password-fields"><div class="field"><label for="password" id="password-label"></label><input type="password" id="password" autocomplete="new-password"></div>
+        <div class="pair"><button class="quiet" id="set-password"></button><button class="quiet" id="no-password" hidden></button></div></div>
+      </div>
+      <form class="group" id="mqtt-form" style="max-width: 520px"><div class="titled"><h3>The board as a device in Home Assistant (MQTT)</h3><span class="info" tabindex="0" aria-label="About the broker">i<span class="tip">With a broker the board shows up in Home Assistant as one device: pads on or off, the page, brightness, volume and battery. Leave the address empty to do without. It starts with the board, so a change here counts from the board's next start. This is separate from the Home Assistant page, which puts your lights on the pads.</span></span></div>
+        <div class="field"><label for="mqtt-host">Broker address</label><input type="text" id="mqtt-host" placeholder="homeassistant.local"></div>
+        <div class="field"><label for="mqtt-username">User</label><input type="text" id="mqtt-username" autocomplete="off"></div>
+        <div class="field"><label for="mqtt-password">Password</label><input type="password" id="mqtt-password" autocomplete="new-password"></div>
+        <div class="pair"><button class="act" id="mqtt-save" type="submit" disabled>Save MQTT settings</button><span class="muted" id="mqtt-status" role="status"></span></div>
+      </form>
+      <div class="group"><h3>Parts found on this board</h3><div class="list" id="parts"></div></div>
+      <div class="group"><div class="titled"><h3>Software</h3><span class="info" tabindex="0" aria-label="About the settings file">i<span class="tip">Board settings are in config.toml. The owner password is stored separately.</span></span></div>
+        <div class="pair"><button class="act" id="update" hidden></button><button class="quiet" id="restart" hidden>Restart the board</button><button class="quiet" id="reset">Factory reset</button></div>
+        <div class="note" id="reset-sure" hidden>
+          <div>This restores the default settings and pad assignments and clears the browser password and access tokens.</div>
+          <div class="pair"><button class="quiet" id="reset-keep">Reset, but keep my clips, drawings and plugins</button><button class="quiet" id="reset-all">Reset and delete those too</button><button class="link" id="reset-no">Cancel</button></div>
+        </div>
+        <p class="muted" id="about"></p>
+      </div>
+    </div>
+  </section>
+  <section class="screen" id="screen-login" hidden>
+    <form class="sheet" id="login" style="max-width: 420px">
+      <h2>Owner sign-in</h2>
+      <p id="setup-owner" hidden>On the Pi, run <code>cd /opt/padcade</code> and <code>python3 -m padcade --set-admin-password</code> as the installing user. Then sign in with that password. Players on the LAN can keep using the pads.</p>
+      <p id="secure-owner" hidden>Open the secure page or use an SSH tunnel to sign in. <a id="owner-link" hidden>Open secure sign-in</a></p>
+      <div class="field" id="login-field"><label for="login-password">Password</label><input type="password" id="login-password" autocomplete="current-password"></div>
+      <div class="pair"><button class="act" id="login-submit">Sign in</button><button class="link" type="button" id="cancel-login" hidden>Back to the board</button></div>
+    </form>
+  </section>
+</main>
+<input type="file" id="zip-file" accept=".zip" hidden>
+<div class="toast" id="toast" role="status" hidden></div>
+
+<script>
+const $ = id => document.getElementById(id);
+$('title').textContent = document.title;
+const el = (tag, props = {}, ...kids) => { const node = Object.assign(document.createElement(tag), props); node.append(...kids.filter(k => k !== null && k !== undefined && k !== false)); return node; };
+const PALETTE = ['#ff5a5a', '#ff9838', '#ffd23f', '#5fe07a', '#3fd0ff', '#5b7bff', '#a070ff', '#ff5fc0', '#f1f0f6'];
+const BLANK = () => Array(64).fill('#000000');
+const clone = value => JSON.parse(JSON.stringify(value));
+
+// ---- what the board says (S), and what this page alone knows: which screen, View or Edit, what is selected
+let S = null, mode = 'view', selected = null, choosing = null, inside = null, picked = null, tab = null, kind = 'page', history = [], removing = null;
+let canvas = null, live = '', lastSound = null, screen = 'board';   // (canvas: what a plugin's panel gave to draw on the board itself, see kitFor)
+
+async function api(path, options = {}) {
+  try {
+    const answer = await fetch(path, options);
+    const kind = answer.headers.get('Content-Type') || '';
+    const body = kind.includes('json') ? await answer.json() : await answer.arrayBuffer();
+    if (answer.status === 401 && body.login) { askPassword(body); if (body.error) toast(body.error); return {error: true}; }
+    if (body?.plugins) body.receivedAt = performance.now();
+    if (body && body.error) toast(body.error);
+    return body;
+  } catch { toast('The board does not answer.'); return {error: true}; }
+}
+const post = (path, data, method = 'POST') => api(path, {method, body: data instanceof Blob || data instanceof ArrayBuffer ? data : JSON.stringify(data)});
+async function refresh() {
+  const base = S, version = base?.config_version;
+  const params = new URLSearchParams();
+  if (version) params.set('config_version', version);
+  if (base?.page === 'soundboard' && !base.plugins.soundboard.own) {
+    params.set('catalog_page', 'soundboard');
+    const token = base.plugins.soundboard.state.catalog_version;
+    if (token) params.set('catalog_version', token);
+  }
+  const state = await api(params.size ? '/api/state?' + params : '/api/state');
+  if (pending || S?.config_version !== version || !state?.plugins) return;
+  if (S && S.config_version === state.config_version && S.revision > state.revision) return;
+  if (!state.config && base && state.config_version === version) state.config = base.config;
+  const board = state.plugins.soundboard;
+  if (board && !('items' in board)) board.items = base.plugins.soundboard.items;
+  took(state);
+}
+// a board with a password: nothing else shows until it is given
+function askPassword({setup = false, management = false, https_needed = false, secure_port} = {}) {
+  $('setup-owner').hidden = !setup;
+  $('secure-owner').hidden = !https_needed;
+  const link = $('owner-link');
+  link.hidden = !https_needed || !secure_port;
+  if (!link.hidden) {
+    const url = new URL(location.href);
+    url.protocol = 'https:'; url.port = secure_port; url.hash = 'owner-sign-in';
+    link.href = url.href;
+  }
+  $('login-field').hidden = $('login-submit').hidden = https_needed;
+  $('cancel-login').hidden = !management;
+  for (const part of document.querySelectorAll('.screen, #nav, #facts')) part.hidden = part.id !== 'screen-login';
+  if (https_needed && !link.hidden) link.focus(); else if (!https_needed) $('login-password').focus();
+}
+function closeLogin() {
+  $('screen-login').hidden = true;
+  $('nav').hidden = $('facts').hidden = false;
+  show(screen);
+}
+$('cancel-login').onclick = closeLogin;
+$('admin-login').onclick = () => api('/api/admin');
+$('login').addEventListener('submit', async event => {
+  event.preventDefault();
+  const answer = await post('/api/login', {password: $('login-password').value}); $('login-password').value = '';
+  if (answer.error) return;
+  closeLogin(); await refresh(); listen();
+});
+function took(state) {
+  if (state?.config && !pending) {
+    if (lastSound === null) lastSound = state.sound_seq || 0;
+    S = state; render();
+  }
+  return state;
+}
+
+const current = () => S.page;
+const plugin = () => S.plugins[S.page] || {name: 'No page', actions: {}, items: [], state: {}};
+const table = (config = S.config) => config.plugins[S.page] || {};
+const bank = () => plugin().state.bank || 0;
+function bankPads(config = S.config) {
+  const t = table(config);
+  if (plugin().banks) { t.banks = t.banks && t.banks.length ? t.banks : [{name: 'Bank 1', pads: {}}]; const b = t.banks[Math.min(bank(), t.banks.length - 1)]; return b.pads = b.pads || {}; }
+  return t.pads = t.pads || {};
+}
+// (`inside`: the pad whose own subpage is being edited, {page, bank, key}: then the pads are that subpage's)
+function pads(config = S.config) {
+  const all = bankPads(config), owner = inside && mode === 'edit' && all[inside.key];
+  return owner ? owner.sub = owner.sub || {} : all;
+}
+const item = id => plugin().items.find(t => String(t.id) === String(id)) || {id, name: String(id), colour: '#888899'};
+// what a pad is called: its thing, or what its tap is called if that says so (one option of a select)
+// what a tap can do with a thing: [[tap, words, a name for such a pad, what its value can be], …]; a tap with a value is kept as 'tap:value'
+const tapsOf = t => t.taps || [];
+const tapEntry = (t, tap) => tapsOf(t).find(([id, , , spec]) => id === tap || spec && String(tap).startsWith(id + ':'));
+const tapValue = tap => String(tap).slice(String(tap).indexOf(':') + 1);
+const startTap = ([id, , , spec]) => spec ? `${id}:${spec.default}` : id;
+const firstTap = t => (tapsOf(t).find(([, , , spec]) => !spec) || ['none'])[0];   // (what a tap does until the owner chooses)
+const padThing = to => to.action ? {name: actionName(to.action), colour: '#baaae0'} : to.thing === undefined ? {name: to.name || 'Subpage', colour: '#b9b6cc', taps: []} : item(to.thing);   // (a pad that only opens its subpage has no thing)
+const ownerName = (to, key) => to.thing !== undefined || to.name ? to.name || padThing(to).name : place(key);   // (what to call a pad whose subpage is meant)
+const padName = to => { const thing = padThing(to), entry = to.tap && tapEntry(thing, to.tap); return to.name || entry && (entry[2] || entry[3] && entry[3].unit !== undefined && tapValue(to.tap) + entry[3].unit) || thing.name; };
+const isRound = key => { const [col, row] = key.split(',').map(Number); return row === 0 || row === 9 || col === 0 || col === 9; };
+// a round button's name in config.toml: top1-8 and bottom1-8 from the left, left1-8 and right1-8 from the top
+function spot(key) { const [col, row] = key.split(',').map(Number); return row === 9 ? 'top' + col : row === 0 ? 'bottom' + col : col === 0 ? 'left' + (9 - row) : 'right' + (9 - row); }
+function place(key) { return isRound(key) ? spot(key).replace(/(\d)/, ' $1') : 'pad ' + key.replace(',', '·'); }
+const keyOf = name => { const n = +name.slice(-1), side = name.slice(0, -1); return side === 'top' ? n + ',9' : side === 'bottom' ? n + ',0' : side === 'left' ? '0,' + (9 - n) : '9,' + (9 - n); };
+// a page that hosts another plugin (Games, while a game is played) also has that plugin's round buttons
+const guest = () => S.plugins[plugin().state.hosted] ? plugin().state.hosted : null;
+const guestTable = (config = S.config) => guest() ? (config.plugins[guest()] = config.plugins[guest()] || {}) : {};
+const does = key => S.config.buttons[spot(key)] ? {all: S.config.buttons[spot(key)]} : (table().buttons || {})[spot(key)] ? {action: table().buttons[spot(key)]}
+  : (guestTable().buttons || {})[spot(key)] ? {action: guestTable().buttons[spot(key)], guest: true} : null;
+const actionName = a => plugin().actions[a] || (guest() && S.plugins[guest()].actions[a]) || a;
+const everywhere = () => [...S.pages.map(id => 'open:' + id), 'show', 'power'];
+const allName = f => f === 'show' ? 'Show or hide the round buttons' : f === 'power' ? 'Turn the pads off or on' : 'Open ' + (S.plugins[f.slice(5)] || {name: f.slice(5)}).name;
+const allColor = f => f === 'show' ? '#ff9838' : f === 'power' ? '#5fe07a' : (S.plugins[f.slice(5)] || {}).colour || '#888899';
+
+// every change to config.toml goes through here: shown at once, saved on the board, undone with Undo
+let pending = null, confirmed;
+const sameValue = (a, b) => JSON.stringify(a) === JSON.stringify(b);
+function changedFields(before, after, path = []) {
+  const record = value => value && typeof value === 'object' && !Array.isArray(value);
+  if (record(before) && record(after)) {
+    return Object.keys({...before, ...after}).flatMap(key => changedFields(before[key], after[key], [...path, key]));
+  }
+  return sameValue(before, after) ? [] : [{path, before, after}];
+}
+function change(edit) {
+  const config = clone(S.config); edit(config);
+  return saveConfig(config);
+}
+async function saveConfig(config, remember = true) {
+  // Each edit includes earlier edits from this tab. Send them in order against their exact predecessor.
+  if (!pending) confirmed = S;
+  const previous = pending || Promise.resolve(confirmed);
+  const write = pending = previous.then(async base => {
+    if (!base?.config) return base;
+    const state = await api('/api/config', {method: 'PUT', headers: {'If-Match': '"' + base.config_version + '"'}, body: JSON.stringify(config)});
+    if (state?.config) {
+      confirmed = state;
+      const changes = remember && changedFields(base.config, state.config);
+      if (changes?.length) { history.push(changes); if (history.length > 40) history.shift(); }
+    }
+    return state;
+  });
+  S = {...S, config}; render();
+  const state = await write;
+  if (pending !== write) return state;
+  pending = null;
+  S = confirmed; render();
+  await refresh();  // Include any live state or bank selection that arrived during the save.
+  const sign = $('saved'); sign.textContent = state?.config ? 'Saved' : 'Not saved'; sign.className = 'saved' + (state?.config ? '' : ' bad'); sign.hidden = false;
+  clearTimeout(change.timer); change.timer = setTimeout(() => { sign.hidden = true; }, 1600);
+  return state;
+}
+const act = what => post('/api/do', what).then(took);
+
+// ---- the board: 8x8 pads inside a ring of round buttons
+const cells = {};
+let brushing = false;
+const held = new Map(), latched = new Set();   // (the pad each finger or the mouse holds down; pads kept down until they are clicked again)
+let keyboardPad = null;
+function liftKeyboardPad() {
+  if (!keyboardPad) return;
+  press(keyboardPad.pad, false);
+  keyboardPad = null;
+}
+addEventListener('keyup', event => {
+  if (keyboardPad?.key === event.key) { event.preventDefault(); liftKeyboardPad(); }
+});
+$('board').addEventListener('focusout', liftKeyboardPad);
+function liftFingers() {
+  liftKeyboardPad();
+  for (const {key} of held.values()) press(key, false);
+  held.clear();
+  brushing = false;
+}
+addEventListener('blur', liftFingers);
+document.addEventListener('visibilitychange', () => { if (document.hidden) liftFingers(); });
+const LONG = 400;   // (ms: a mouse has one finger, so on a page whose pads are held for more a press this long stays down)
+function letGo() { for (const key of latched) press(key, false); const any = latched.size; latched.clear(); if (any) render(); }
+addEventListener('keydown', event => { if (event.key !== 'Escape') return; letGo(); if (picked) { picked = null; render(); } else if (choosing) { choosing = null; render(); } });
+for (let row = 9; row >= 0; row--) for (let col = 0; col <= 9; col++) {
+  const key = col + ',' + row;
+  if ((row === 0 || row === 9) && (col === 0 || col === 9)) { $('board').append(el('span', {className: 'gap'})); continue; }
+  const cell = el('button', {className: 'cell' + (isRound(key) ? ' round' : '')}, el('b'));
+  cell.dataset.key = key;
+  const showName = () => { $('where').textContent = describe(key); };
+  cell.addEventListener('pointerenter', showName);
+  cell.addEventListener('focus', showName);
+  cell.addEventListener('pointerdown', event => {
+    if (canvas) { if (!isRound(key)) { brushing = true; stroke(key, true); } return; }
+    if (mode !== 'view') return;
+    event.preventDefault();
+    if (latched.delete(key)) { press(key, false); return render(); }   // (kept down by a Shift-click: this click lets it go)
+    const velocity = event.pointerType === 'pen' && event.pressure > 0 ? Math.max(1, Math.round(event.pressure * 127)) : undefined;
+    press(key, true, velocity);
+    if (S.simulator) wake();
+    const bankChoice = plugin().state.picker === 'banks' && !isRound(key);
+    if (event.shiftKey && !bankChoice) { latched.add(key); render(); } else held.set(event.pointerId, {key, since: performance.now(), mouse: event.pointerType === 'mouse'});
+  });
+  cell.addEventListener('click', event => {
+    if (canvas && !isRound(key) && event.detail === 0) stroke(key, true);   // keyboard and assistive-technology activation
+    else if (!canvas && mode === 'edit') tapped(key);
+  });
+  cell.addEventListener('keydown', event => {
+    if (mode !== 'view' || canvas || (event.key !== 'Enter' && event.key !== ' ')) return;
+    if (S.page === 'soundboard') {
+      event.preventDefault();
+      if (event.repeat || keyboardPad) return;
+      keyboardPad = {pad:key, key:event.key};
+      press(key, true);
+      if (S.simulator) wake();
+    } else if (!event.repeat) {
+      press(key, true); press(key, false);
+    }
+  });
+  cell.addEventListener('dragstart', event => { if (mode === 'edit' && !canvas && pads()[key]) event.dataTransfer.setData('text/plain', 'pad:' + key); else event.preventDefault(); });
+  cell.addEventListener('dragover', event => { if (mode === 'edit' && !canvas && (isRound(key) || plugin().thing)) { event.preventDefault(); cell.classList.add('over'); } });
+  cell.addEventListener('dragleave', () => cell.classList.remove('over'));
+  cell.addEventListener('drop', event => { event.preventDefault(); cell.classList.remove('over'); dropped(key, event.dataTransfer); });
+  cells[key] = cell; $('board').append(cell);
+}
+const lift = event => {
+  brushing = false;
+  const down = held.get(event.pointerId); if (!down) return;
+  held.delete(event.pointerId);
+  if (event.type === 'pointerup' && down.mouse && plugin().holds && performance.now() - down.since > LONG) { latched.add(down.key); render(); } else press(down.key, false);
+};
+addEventListener('pointerup', lift);
+addEventListener('pointercancel', lift);
+$('board').addEventListener('pointermove', event => {   // (a finger dragged across the pads paints them too)
+  if (!canvas || !brushing) return;
+  const under = document.elementFromPoint(event.clientX, event.clientY), key = under && under.closest('.cell') && under.closest('.cell').dataset.key;
+  if (key && !isRound(key)) stroke(key, false);
+});
+function stroke(key, first) { const [col, row] = key.split(',').map(Number); canvas.stroke((row - 1) * 8 + col - 1, first); $('undo').disabled = !canvas.undoable(); }   // (a pad painted, counted from the bottom left)
+function canLeaveCanvas() { return !canvas?.dirty?.() || confirm('Discard the unsaved changes to this drawing?'); }
+addEventListener('beforeunload', event => { if (canvas?.dirty?.()) { event.preventDefault(); event.returnValue = ''; } });
+function endCanvas() { if (canvas && canvas.close) canvas.close(); canvas = null; }
+const padRequests = new Map();
+function press(key, down, velocity) {
+  const [x, y] = key.split(',').map(Number);
+  // Send releases after their presses without making other fingers wait.
+  const send = () => post('/api/press', {x, y, down, velocity});
+  const pending = padRequests.get(key);
+  const request = pending ? pending.then(send) : send();
+  padRequests.set(key, request);
+  request.finally(() => { if (padRequests.get(key) === request) padRequests.delete(key); });
+}
+const printed = {
+  top: ['▲','▼','◀','▶','Session','Note','Device','User'],
+  left: ['Shift','Click','Undo','Delete','Quantise','Duplicate','Double','○'],
+  bottom: ['Record Arm','Track Select','Mute','Solo','Volume','Pan','Sends','Stop Clip'],
+  right: Array(8).fill('▷'),
+};
+// Only these factory positions add a performance cue beneath their printed face.
+const faceCues = {bottom5:'volume', bottom2:'songs'};
+function buttonFace(key, label, binding) {
+  if (spot(key) === 'left8' && binding?.action === 'performance') return '○\nRecord';
+  if (binding?.action === 'sustain' && plugin().state.studio?.available.includes('sustain')) return 'Sustain';
+  if (!plugin().state.studio || binding?.action && binding.action === faceCues[spot(key)]) return label;
+  return label.split('\n', 1)[0];
+}
+function names() {
+  const p = plugin();
+  if (!S.power || canvas) return {};
+  const placed = () => p.thing && !guest() ? Object.fromEntries(Object.entries(pads()).map(([key, to]) => [key, padName(to)])) : {};
+  if (!p.state.studio) return p.state.labels || placed();
+  const labels = {...placed(), ...p.state.labels};
+  for (const [side, buttons] of Object.entries(printed)) buttons.forEach((face, i) => {
+    const pos = side + (i+1), key = keyOf(pos), all = S.config.buttons[pos];
+    let action = all ? (all.startsWith('open:') ? S.plugins[all.slice(5)]?.name : all === 'power' ? 'Power' : 'Show') : labels[pos];
+    // The fixed legend stays on the button when its assigned action moves.
+    if (action?.startsWith(face + ' · ')) action = action.slice(face.length + 3);
+    else if (action) action = action.replace(/^(Shift|Track Select|Stop Clip) · /, '');
+    labels[key] = action && action !== face ? face + '\n' + action : face;
+  });
+  return labels;
+}
+function describe(key, shown) {
+  const f = isRound(key) ? does(key) : pads()[key];
+  const words = mode === 'view' ? (plugin().state.pad_hints?.[key] ?? (shown || names())[key]) : undefined;
+  let what = words !== undefined ? words.replace('\n', ' · ') : !f ? '' : f.all ? allName(f.all) : f.action ? actionName(f.action) : padName(f);
+  if (S.page === 'soundboard' && !plugin().state.picker && plugin().state.studio?.mode === 'play'
+      && f?.name && f.name === words && typeof f.thing === 'string') {
+    const melody = /^(Studio bass|Jam bass|Jam pluck|Piano) [A-G][b#]?\d$/.exec(f.thing);
+    if (melody && /^[A-G][♭♯b#]?\d$/.test(words)) what = melody[1] + ' ' + words;
+    else if (f.thing.startsWith('Chord ')) what = 'Chord ' + words.replace(/ ↑↑$/, ', two octaves up').replace(/ ↑$/, ', one octave up');
+    else if (f.thing.endsWith(' ' + words)) what = f.thing;
+  }
+  return place(key).replace(/^./, c => c.toUpperCase()) + (what ? ' · ' + what : '');
+}
+// (an LED at a tenth of its power still looks lit; a screen pixel at a tenth is black: so the screen shows it brighter)
+const led = hex => '#' + [0, 2, 4].map(k => Math.round(255 * (parseInt(hex.substr(k, 2), 16) / 255) ** .55).toString(16).padStart(2, '0')).join('');
+// what the surface shows: in View the board's own frames, in Edit what is put where
+function colours() {
+  const out = {};
+  if (canvas) { canvas.frame().forEach((c, i) => { out[(i % 8 + 1) + ',' + (Math.floor(i / 8) + 1)] = c === '#000000' ? null : c; }); return out; }
+  for (const [name, f] of Object.entries(S.config.buttons)) out[keyOf(name)] = allColor(f) + (f === 'open:' + current() || !f.startsWith('open:') ? '' : '55');
+  for (const [name, action] of Object.entries(table().buttons || {})) if (!out[keyOf(name)]) out[keyOf(name)] = action === 'bank:' + bank() ? '#5fe07a' : '#d9d6ea';
+  for (const [name, action] of Object.entries(guestTable().buttons || {})) if (!out[keyOf(name)]) out[keyOf(name)] = '#d9d6ea';
+  for (const [key, to] of Object.entries(pads())) out[key] = to.colour || padThing(to).colour;
+  return out;
+}
+function foreground(hex) {
+  const linear = [1, 3, 5].map(i => {
+    const c = parseInt(hex.slice(i, i + 2), 16) / 255;
+    return c <= .04045 ? c / 12.92 : ((c + .055) / 1.055) ** 2.4;
+  });
+  const luminance = .2126 * linear[0] + .7152 * linear[1] + .0722 * linear[2];
+  return (luminance + .05) / .05 >= 1.05 / (luminance + .05) ? '#000' : '#fff';
+}
+const lamps = Object.entries(cells).map(([key, cell]) => {
+  const [x, y] = key.split(',').map(Number);
+  return {key, cell, offset:(10 * y + x) * 6, round:isRound(key)};
+});
+function draw() {
+  const layout = mode === 'view' && !canvas ? null : colours();
+  const whole = layout && !canvas && !plugin().thing;   // (a page that draws on all 64 pads: in Edit they go on showing it)
+  for (const lamp of lamps) {
+    const {key, cell, offset, round} = lamp;
+    const frame = whole && !round ? null : layout;
+    const raw = frame ? frame[key] || '' : live.slice(offset, offset + 6);
+    if (lamp.last === raw) continue;
+    lamp.last = raw;
+    let colour = raw;
+    if (!frame && raw) colour = raw === '000000' ? '' : led(raw);
+    if (round) { cell.style.setProperty('--led', colour); cell.style.color = colour ? foreground(colour) : '#ddd'; }
+    else { cell.style.backgroundColor = colour; cell.style.color = colour ? foreground(colour) : '#fff'; }
+  }
+}
+
+// ---- Edit: a tap on a pad or round button selects it, or puts there what was picked in the column
+const here = () => S.page + '|' + bank() + '|' + (inside ? inside.key : '');   // (the bank or the subpage on the board just now)
+const finger = key => inside && mode === 'edit' && key === inside.key;
+function tapped(key) {
+  choosing = null;
+  if (finger(key)) return toast('This pad opens the subpage and closes it: nothing else can go here.');
+  if (!picked) { selected = key; return render(); }
+  const p = picked; picked = null; selected = key;
+  if (p.thing !== undefined && !isRound(key)) return setPad(key, {thing: p.thing});
+  if (p.pad && !isRound(key)) return movePad(p.pad, key);
+  if (p.copy && !isRound(key)) { picked = p; selected = null; if (pads()[key] || !inside && hides(p.copy, key)) { toast(pads()[key] ? 'That pad has something on it already. Copies go on empty pads.' : 'Its subpage has a pad on that spot. Choose another pad.'); return render(); } const {sub, ...flat} = clone(p.copy); return setPad(key, inside ? {...flat, hold: flat.hold === 'page' ? 'none' : flat.hold} : clone(p.copy)); }   // (copies go on pad after pad; a subpage has no subpages)
+  toast('That goes on a pad.'); picked = p; selected = null; render();
+}
+function setRound(key, scope, value) { change(config => {
+  const name = spot(key), mine = table(config).buttons = table(config).buttons || {}, theirs = guest() ? guestTable(config).buttons = guestTable(config).buttons || {} : {};
+  delete config.buttons[name]; delete mine[name]; delete theirs[name];
+  const where = scope === 'all' ? config.buttons : scope === 'page' ? mine : scope === 'guest' ? theirs : null;
+  if (where) { for (const other in where) if (where[other] === value) delete where[other]; where[name] = value; }   // (a function sits on one button: it moves)
+}); }
+function setPad(key, to) { change(config => { to ? pads(config)[key] = to : delete pads(config)[key]; }); }
+const hides = (pad, key) => !!pad && !!pad.sub && !!pad.sub[key];   // (on that spot the pad would cover a pad of its own subpage)
+function movePad(from, key) { if (hides(pads()[from], key) || hides(pads()[key], from)) return toast('Its subpage has a pad on that spot. Choose another pad.'); if (from !== key) change(config => { const p = pads(config), moved = p[from], here = p[key]; here ? p[from] = here : delete p[from]; p[key] = moved; }); selected = key; }
+function dropped(key, data) {
+  if (data.files && data.files.length) { if (!isRound(key)) hook('dropped', key, [...data.files]); return; }
+  const [what, scope, ...rest] = (data.getData('text/plain') || '').split(':'), value = rest.join(':');
+  picked = null;
+  if (finger(key)) return toast('This pad opens the subpage and closes it: nothing else can go here.');
+  if (isRound(key)) return;
+  if (what === 'thing') { selected = key; setPad(key, {thing: [scope, ...rest].join(':')}); }
+  if (what === 'pad') movePad(scope, key);
+}
+// Whoever works the page with the keyboard is offered what a mouse does by dragging (the Move button).
+addEventListener('keydown', event => { if (['Tab', 'Enter', ' ', 'ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(event.key)) document.body.classList.add('keys'); }, true);
+addEventListener('pointerdown', () => document.body.classList.remove('keys'), true);
+function pick(what) { picked = picked && JSON.stringify(picked) === JSON.stringify(what) ? null : what; selected = null; render(); }
+
+// ---- sound: with no speaker (the simulator) this page plays what the board plays; a clip can always be tried here
+let audio, speaker, master, gain = 1;
+async function speakerOutput(ctx) {
+  if (ctx.audioWorklet) {
+    try {
+      await ctx.audioWorklet.addModule('/limiter.js');
+      const limiter = new AudioWorkletNode(ctx, 'padcade-limiter', {outputChannelCount: [2]});
+      limiter.connect(ctx.destination);
+      return limiter;
+    } catch { /* Fall back when the browser cannot load audio worklets. */ }
+  }
+  // Plain HTTP on a LAN may only have the built-in compressor.
+  const limiter = ctx.createDynamicsCompressor();
+  limiter.threshold.value = -3; limiter.knee.value = 0; limiter.ratio.value = 20;
+  limiter.attack.value = 0; limiter.release.value = .12;
+  const trim = ctx.createGain();
+  // Compensate the compressor's automatic makeup gain and leave room for transients.
+  trim.gain.value = .82;
+  limiter.connect(trim).connect(ctx.destination);
+  return limiter;
+}
+function context() {
+  if (!audio) {
+    audio = new (window.AudioContext || window.webkitAudioContext)();
+    master = audio.createGain();
+    master.gain.value = gain;
+    speaker = speakerOutput(audio).then(limiter => {
+      const mix = audio.createGain();
+      mix.connect(master).connect(limiter);
+      return mix;
+    });
+  }
+  return audio;
+}
+const buffers = new Map(), sounding = new Map(), activeVoices = new Set();
+function measureClip(buffer) {
+  const bucketFrames = Math.max(1, Math.round(.05 * buffer.sampleRate));
+  const peaks = new Float32Array(Math.ceil(buffer.length / bucketFrames));
+  for (let channel = 0; channel < buffer.numberOfChannels; channel++) {
+    const samples = buffer.getChannelData(channel);
+    let peak = 0;
+    for (let bucket = peaks.length - 1; bucket >= 0; bucket--) {
+      const end = Math.min((bucket + 1) * bucketFrames, samples.length);
+      for (let i = bucket * bucketFrames; i < end; i++) peak = Math.max(peak, Math.abs(samples[i]));
+      peaks[bucket] = Math.max(peaks[bucket], peak);
+    }
+  }
+  return {buffer, peaks, bucketSeconds:bucketFrames / buffer.sampleRate};
+}
+function balance(mix, now) {
+  let power = 0;
+  for (const voice of activeVoices) {
+    const bucket = Math.max(0, Math.floor((now - voice.startedAt) / voice.clip.bucketSeconds));
+    let peak = (voice.clip.peaks[bucket] || 0) * voice.level;
+    if (voice.releaseAt !== undefined && now > voice.releaseAt)
+      peak *= Math.max(0, 1 - (now - voice.releaseAt) / voice.releaseSeconds) ** 3;
+    if (voice.cutAt !== undefined) peak *= Math.max(0, 1 - (now - voice.cutAt) / .006);
+    power += peak * peak;
+  }
+  const target = 1 / Math.max(1, Math.sqrt(power));
+  const recovery = .1 * (target - mix.gain.value);
+  mix.gain.cancelScheduledValues(now);
+  // A short linear ramp can already have expired when the audio thread receives it.
+  mix.gain.setTargetAtTime(target, now, Math.max(128 / audio.sampleRate, recovery) / 3);
+}
+// Decoded stereo costs about 23 MB per minute at 48 kHz. Keep recently played pads warm.
+const bufferBudget = 64 * 1024 * 1024;
+let cachedBytes = 0;
+function loadClip(url, key) {
+  const warm = buffers.get(key);
+  if (warm) {
+    buffers.delete(key);
+    buffers.set(key, warm);
+    return warm.decoded;
+  }
+  const entry = {bytes:0};
+  entry.decoded = fetch(url).then(r => {
+    if (!r.ok) throw new Error('Could not load the sound.');
+    return r.arrayBuffer();
+  }).then(data => context().decodeAudioData(data)).then(buffer => {
+    const clip = measureClip(buffer);
+    if (key === null) return clip;
+    entry.bytes = buffer.length * buffer.numberOfChannels * Float32Array.BYTES_PER_ELEMENT + clip.peaks.byteLength;
+    if (entry.bytes > bufferBudget) { buffers.delete(key); return clip; }
+    cachedBytes += entry.bytes;
+    for (const [id, other] of buffers) {
+      if (cachedBytes <= bufferBudget) break;
+      if (other.bytes) { buffers.delete(id); cachedBytes -= other.bytes; }
+    }
+    return clip;
+  }).catch(error => { buffers.delete(key); throw error; });
+  if (key !== null) buffers.set(key, entry);
+  return entry.decoded;
+}
+async function sound(url, key = url, level = 1, when, elapsed = 0) {
+  context();
+  const [clip, mix] = await Promise.all([loadClip(url, key), speaker]);
+  const source = audio.createBufferSource(), volume = audio.createGain();
+  const cutoff = audio.createGain(); // A stolen note may already be following its release envelope.
+  source.buffer = clip.buffer; volume.gain.value = level; source.connect(volume).connect(cutoff).connect(mix);
+  const now = audio.currentTime;
+  const start = when ? Math.max(now, when()) : now;
+  if (elapsed) {
+    cutoff.gain.setValueAtTime(0, start);
+    cutoff.gain.linearRampToValueAtTime(1, start + .006);
+  }
+  const voice = {source, volume, cutoff, startedAt:start - elapsed, elapsed, clip, level};
+  activeVoices.add(voice);
+  balance(mix, now);
+  source.addEventListener('ended', () => {
+    activeVoices.delete(voice);
+    balance(mix, audio.currentTime);
+  }, {once:true});
+  source.start(start, elapsed);
+  return voice;
+}
+let queuedUntil = 0, queuedStamp = 0;
+// A browser keeps sound off until the first click or key. What arrived before that is dropped then, not played all at once.
+function wake() {
+  if (context().state === 'suspended' && !audio.currentTime) for (const voice of activeVoices) voice.source.stop();
+  return audio.resume();
+}
+function sounds(events, catchUpAt) {
+  const fresh = events.filter(e => e.n > lastSound);
+  if (events.length) lastSound = events[events.length - 1].n;
+  if (!fresh.length) return;
+  let readyAt;
+  // The first live strike has no lookahead. Preserve spacing within a delivery, and catch up
+  // after a reconnect or a long blockage instead of replaying an old performance from its start.
+  const windowSeconds = .1, end = fresh.at(-1).at || 0;
+  const origin = catchUpAt ?? Math.max(fresh[0].at || 0, end - windowSeconds);
+  function schedule(offset) {
+    if (readyAt === undefined) {
+      const now = context().currentTime;
+      // If the previous packet still has strokes queued ahead, finish them in pad order.
+      readyAt = queuedUntil > now && origin >= queuedStamp
+        ? Math.min(now + windowSeconds, queuedUntil + (origin - queuedStamp)) : now;
+      queuedStamp = end;
+      queuedUntil = readyAt + Math.max(0, end - origin);
+    }
+    return readyAt + Math.max(0, offset);
+  }
+  for (const e of fresh) {
+    const offset = e.at === undefined ? 0 : e.at - origin;
+    const when = () => schedule(offset);
+    if (e.play) {
+      const elapsed = Math.max(0, -offset);
+      if (elapsed && (elapsed >= e.seconds || fresh.some(stop =>
+        stop.stop === e.play && stop.at + (stop.release || 0) <= origin))) continue;
+      const voice = sound('/api/sound/' + e.play, e.key, e.gain, when, elapsed);
+      sounding.set(e.play, voice);
+      const forget = () => { if (sounding.get(e.play) === voice) sounding.delete(e.play); };
+      voice.then(({source}) => source.addEventListener('ended', forget)).catch(forget);
+    } else {
+      // The release can arrive in the same update as the strike, even before its WAV finishes loading.
+      sounding.get(e.stop)?.then(voice => {
+        const {source, volume, cutoff, startedAt} = voice;
+        const releaseLeft = (e.release || 0) + Math.min(0, offset);
+        if (releaseLeft <= 0) {
+          const now = Math.max(context().currentTime, when());
+          voice.cutAt = now;
+          if (now <= startedAt) { source.stop(now); return; }
+          cutoff.gain.setValueAtTime(1, now);
+          cutoff.gain.linearRampToValueAtTime(0, now + .006);
+          source.stop(now + .006);
+          return;
+        }
+        const at = Math.max(context().currentTime, startedAt + e.held);
+        voice.releaseAt = at;
+        voice.releaseSeconds = releaseLeft;
+        const level = volume.gain.value * (voice.elapsed ? (releaseLeft / e.release) ** 3 : 1);
+        const curve = Float32Array.from({length:33}, (_, i) => level * (1 - i/32) ** 3);
+        volume.gain.setValueCurveAtTime(curve, at, releaseLeft);
+        source.stop(at + releaseLeft);
+      }).catch(() => {});
+    }
+  }
+}
+function toast(text) { const t = $('toast'); t.textContent = text; t.hidden = false; clearTimeout(toast.timer); toast.timer = setTimeout(() => { t.hidden = true; }, 2600); }
+
+// a picture of 64 pads, small
+function thumb(pixels) {
+  const canvas = el('canvas', {width: 8, height: 8}), c = canvas.getContext('2d');
+  pixels.forEach((color, i) => { c.fillStyle = color; c.fillRect(i % 8, 7 - Math.floor(i / 8), 1, 1); });
+  canvas.style.imageRendering = 'pixelated'; return canvas;
+}
+// ---- small parts
+let fields = 0;
+const field = (text, control) => { const labelled = /INPUT|SELECT|BUTTON/.test(control.tagName) ? control : control.classList.contains('amount') ? control.firstChild : null; if (labelled && !labelled.id) labelled.id = 'field-' + ++fields;   // (the same ids every time the column is drawn)
+  return el('div', {className: 'field'}, el('label', {textContent: text, htmlFor: labelled ? labelled.id : ''}), control); };
+function chooser(groups, value, change) {
+  const s = el('select');
+  groups.forEach(([title, options]) => { const parent = title ? el('optgroup', {label: title}) : s; options.forEach(([v, text]) => parent.append(el('option', {value: v, textContent: text, selected: String(v) === String(value)}))); if (title) s.append(parent); });
+  s.addEventListener('change', () => change(s.value)); return s;
+}
+function switchButton(on, name, change) {
+  const b = el('button', {className: 'switch'}); b.setAttribute('role', 'switch'); b.setAttribute('aria-checked', on); b.setAttribute('aria-label', name);
+  b.addEventListener('click', () => change(b.getAttribute('aria-checked') !== 'true')); return b;
+}
+const head = (title, small, done) => el('header', {}, el('div', {className: 'crumb'}, title, small ? el('small', {textContent: '  ' + small}) : null),
+  done ? el('button', {className: 'link', textContent: 'Done', onclick: done}) : null);
+// colours to choose from, and any other; a slider that says its value
+function swatches(colour, tint) {
+  const any = el('input', {type: 'color', value: /^#[0-9a-f]{6}$/i.test(colour) ? colour : '#888899', title: 'Any colour'}); any.addEventListener('change', () => tint(any.value));
+  return el('div', {className: 'swatches'}, ...PALETTE.map(c => { const b = el('button', {style: `background:${c}`, title: c, onclick: () => tint(c)}); b.setAttribute('aria-pressed', c === colour); return b; }), any);
+}
+function amount(spec, value, set, id) {
+  const slider = el('input', {type: 'range', id: id + '-slider', min: spec.min, max: spec.max, step: spec.step, value}), box = el('input', {type: 'number', id: id + '-box', min: spec.min, max: spec.max, step: spec.step, value});
+  box.setAttribute('aria-label', 'Exact value');
+  slider.addEventListener('input', () => { box.value = slider.value; }); slider.addEventListener('change', () => set(+slider.value));
+  box.addEventListener('change', () => { const v = Math.min(spec.max, Math.max(spec.min, +box.value || 0)); set(v); });
+  return el('div', {className: 'amount'}, slider, box, spec.unit ? el('span', {textContent: spec.unit.trim()}) : null);
+}
+// an explanation that waits behind a small icon: shown on hover, and kept open by a click or the keyboard
+const info = (...content) => { const icon = el('span', {className: 'info', tabIndex: 0}, 'i', el('span', {className: 'tip'}, ...content)); icon.setAttribute('aria-label', 'More about this'); return icon; };
+// one setting or pad option, built from the plugin's description: a range, a choice, a switch or text
+function control(spec, value, set) {
+  if (spec.type === 'choice') return chooser([['', spec.choices]], value, v => set(spec.choices.find(([c]) => String(c) === v)[0]));
+  if (spec.type === 'range') { const r = el('input', {type: 'range', min: spec.min ?? 0, max: spec.max ?? 100, step: spec.step ?? 1, value}); r.addEventListener('change', () => set(+r.value)); return r; }
+  if (spec.type === 'switch') return switchButton(!!value, spec.label, set);
+  const t = el('input', {type: spec.type === 'secret' ? 'password' : 'text', value: value ?? '', placeholder: spec.placeholder || '', autocomplete: 'off'}); t.addEventListener('change', () => setTimeout(() => set(t.value))); return t;   // (after the click or Tab that left the field has landed: the page is drawn again, and the field it went to keeps the cursor)
+}
+// a long list of things made short: a box to find one by name, the kinds to choose among, the rooms they are in
+let finding = '', only = '', room = '';
+const MOST = 60;   // (rows of a list shown at once)
+let listLimit = MOST, listContext;
+function browser(items, tile) {
+  const kinds = [...new Set(items.map(t => t.kind).filter(Boolean))], rooms = [...new Set(items.map(t => t.place).filter(Boolean))].sort();
+  if (!kinds.includes(only)) only = ''; if (!rooms.includes(room)) room = '';
+  const box = el('input', {type: 'text', placeholder: `Find among ${items.length} by name`, value: finding, id: 'finder'}), list = el('div', {className: 'group results'});
+  box.setAttribute('aria-label', 'Find ' + (plugin().things || 'items').toLowerCase());
+  const context = JSON.stringify([current(), bank(), tab, selected, choosing, inside?.key]);
+  if (context !== listContext) { listContext = context; listLimit = MOST; }
+  const fill = () => {
+    const words = finding.toLowerCase().split(/\s+/).filter(Boolean);
+    const shown = items.filter(t => (!room || t.place === room) && (!only || t.kind === only) && words.every(w => `${t.name} ${t.id} ${t.place || ''}`.toLowerCase().includes(w)));
+    list.replaceChildren(...[shown.length ? listed(shown.slice(0, listLimit), tile) : el('p', {className: 'muted', textContent: items.length ? 'Nothing here by that name.' : 'Nothing to place yet.'}),
+      shown.length > listLimit ? el('button', {className:'quiet', textContent:'Show more (' + (shown.length - listLimit) + ')', onclick: () => { listLimit += MOST; fill(); }}) : null].filter(Boolean));
+  };
+  box.addEventListener('input', () => { finding = box.value; listLimit = MOST; fill(); });
+  box.addEventListener('keydown', event => { const only = list.querySelectorAll('.thing'); if (event.key === 'Enter' && only.length === 1) only[0].click(); });
+  fill();
+  const kindFilter = kinds.length > 1 && chooser([['', [['', 'All groups'], ...kinds.map(k => [k, `${k} (${items.filter(t => t.kind === k).length})`])]]], only, v => { only = v; listLimit = MOST; fill(); });
+  if (kindFilter) kindFilter.setAttribute('aria-label', 'Filter by group');
+  return el('div', {className: 'group browser' + (kinds.length ? ' rows' : '')}, el('div', {className: 'finders'}, box,
+    kindFilter,
+    rooms.length ? chooser([['', [['', 'Every room'], ...rooms.map(r => [r, r])]]], room, v => { room = v; listLimit = MOST; fill(); }) : null), list);
+}
+const pickFrom = (items, tile) => items.length > 16 || items.some(t => t.kind) ? browser(items, tile) : items.length ? listed(items, tile) : el('p', {className: 'muted', textContent: 'Nothing to place yet.'});
+function whereIs(id) {
+  const t = table(), on = (pads, name) => { for (const key in pads || {}) { const to = pads[key];
+    if (String(to.thing) === String(id)) return name(key);
+    if (Object.values(to.sub || {}).some(inner => String(inner.thing) === String(id))) return name(key) + ', subpage'; } };
+  if (plugin().banks) { for (const b of t.banks || []) { const at = on(b.pads, key => `${b.name} ${key.replace(',', '·')}`); if (at) return at; } return null; }
+  return on(t.pads, place) || null;
+}
+// things under the headings of their kinds, if the page gives them kinds
+function listed(items, tile) {
+  const kinds = [...new Set(items.map(t => t.kind || ''))];
+  if (!kinds.some(Boolean)) return el('div', {className: 'things'}, ...items.map(t => tile(t)));
+  return el('div', {className: 'group'}, ...kinds.map(kind => el('div', {className: 'group kind'}, el('h3', {textContent: kind}), el('div', {className: 'things'}, ...items.filter(t => (t.kind || '') === kind).map(t => tile(t))))));
+}
+const bankPicture = b => { const f = BLANK(); for (const [key, to] of Object.entries(b.pads || {})) { const [c, r] = key.split(',').map(Number); f[(r - 1) * 8 + c - 1] = to.colour || padThing(to).colour; } return f; };
+function thingTile(thing, choose, now) {
+  const at = whereIs(thing.id), isPicked = now !== undefined ? String(now) === String(thing.id) : picked && String(picked.thing) === String(thing.id);
+  const tile = el('div', {className: 'thing' + (at ? '' : ' loose') + (isPicked ? ' picked' : ''), draggable: true, tabIndex: 0}, el('i', {style: `background:${thing.colour}`}),
+    el('div', {className: 'label'}, el('div', {textContent: thing.name}), el('small', {className: at && thing.kind ? 'on' : '', textContent: thing.kind ? (at ? 'on ' + at : thing.place || '') : at || 'not on a pad'})));
+  tile.setAttribute('role', 'button'); tile.title = thing.kind ? String(thing.id) : '';
+  hook('tile', tile, thing);
+  const go = () => choose ? choose() : pick({thing: thing.id});
+  tile.addEventListener('click', go);
+  tile.addEventListener('keydown', event => { if (event.target === tile && (event.key === 'Enter' || event.key === ' ')) { event.preventDefault(); go(); } });
+  tile.addEventListener('dragstart', event => event.dataTransfer.setData('text/plain', 'thing:' + thing.id));
+  return tile;
+}
+// the banks of a page that has them: go to one, add one, name it, remove it
+function bankTabs(editing) {
+  const all = pads() && table().banks, at = Math.min(bank(), all.length - 1);
+  const order = plugin().state.bank_order;
+  const indices = Array.isArray(order) && order.length === all.length ? order : all.map((_, i) => i);
+  return [...indices.map(i => { const b = all[i], unavailable = !editing && plugin().state.studio && !plugin().state.studio.available.includes('bank:' + i);
+    const t = el('button', {textContent: b.name, disabled: !!unavailable, title: `Bank ${i + 1}`, onclick: () => { selected = null; letGo(); act({action: 'bank:' + i}); }}); t.setAttribute('aria-pressed', i === at); return t; }),
+    editing ? el('button', {className: 'add', textContent: '+ New bank', onclick: async () => {
+      await change(config => { pads(config); const t = table(config); t.banks.push({name: 'Bank ' + (t.banks.length + 1), pads: {}});
+        const free = Object.values(t.buttons || {}).some(a => String(a).startsWith('bank:')) && [1, 2, 3, 4, 5, 6, 7, 8].map(n => 'bottom' + n).find(k => !config.buttons[k] && !(t.buttons || {})[k]); if (free) (t.buttons = t.buttons || {})[free] = 'bank:' + (t.banks.length - 1); });
+      selected = null; tab = 'things'; await act({action: 'bank:' + (table().banks.length - 1)}); if ($('bank-name')) { const settings = $('bank-name').closest('details'); if (settings) settings.open = true; $('bank-name').select(); } }}) : null].filter(Boolean);
+}
+function bankGroup() {
+  const all = pads() && table().banks, at = Math.min(bank(), all.length - 1);
+  const name = el('input', {type: 'text', id: 'bank-name', value: all[at].name}); name.addEventListener('change', () => change(config => { pads(config); table(config).banks[at].name = name.value || 'Bank'; }));
+  const removeBank = all.length > 1 && el('button', {className: 'quiet', textContent: 'Remove this bank', onclick: () => change(config => { const t = table(config); t.banks.splice(at, 1);
+    t.buttons = Object.fromEntries(Object.entries(t.buttons || {}).filter(([, a]) => a !== 'bank:' + at).map(([k, a]) => [k, a.startsWith('bank:') && +a.slice(5) > at ? 'bank:' + (a.slice(5) - 1) : a])); })});
+  const opener = Object.keys(table().buttons || {}).find(k => table().buttons[k] === 'bank:' + at && !S.config.buttons[k]);
+  return el('div', {className: 'group'}, el('h3', {textContent: `Bank ${at + 1} of ${all.length}`}), field('Name', name),
+    opener ? el('p', {className: 'muted', textContent: `${place(keyOf(opener)).replace(/^./, c => c.toUpperCase())} opens this bank. Click that round button on the board to move it.`}) : null,
+    removeBank ? el('div', {className: 'pair'}, removeBank) : null);
+}
+// an action whose round button does something else on every page is never reached: said in Edit
+function coveredNote() {
+  const rows = (S.covered || []).map(c => { const where = place(keyOf(c.button)); return el('div', {textContent:
+    `${where[0].toUpperCase() + where.slice(1)} does “${allName(c.does)}” on every page, so “${(S.plugins[c.plugin].actions || {})[c.action] || c.action}” of ${S.plugins[c.plugin].name} is never reached there. Give one of the two another button.`}); });
+  return rows.length ? el('div', {className: 'note'}, ...rows) : null;
+}
+
+// a page's settings, one field each; a note may come with a link made from the settings (`{address}/…`)
+let credentialDraft = null;
+function settingFields(p, typedOnly) {
+  if (!S.is_admin && (p.own || !['soundboard', 'pixel_art'].includes(S.page)) && Object.keys(p.settings).length)
+    return [el('button', {className:'quiet', textContent:'Sign in to edit plugin settings', onclick:() => api('/api/admin')})];
+  const grouped = typedOnly || Object.values(p.settings).some(spec => spec.bound_to);
+  if (grouped && !credentialDraft) credentialDraft = {page: S.page, values: {}, saving: false, error: false};
+  const draft = grouped && credentialDraft;
+  const chosen = table().settings || {}, value = name => chosen[name] ?? p.settings[name].default, out = [];
+  for (const [name, spec] of Object.entries(p.settings)) {
+    if (typedOnly && !['text', 'secret'].includes(spec.type)) continue;
+    const kept = spec.type === 'secret' && (p.secrets || []).includes(name);   // (a secret stays on the board: the page only knows it is set)
+    const textField = spec.type === 'text' || spec.type === 'secret';
+    const placeholder = kept ? 'Saved. Type to replace it.' : spec.placeholder || '';
+    const input = draft && textField ? el('input', {type: spec.type === 'secret' ? 'password' : 'text',
+      value: draft.values[name] ?? (spec.type === 'secret' ? '' : value(name)) ?? '', placeholder, autocomplete: 'off', disabled: draft.saving})
+      : control({...spec, placeholder}, value(name), v => change(config => { (table(config).settings = table(config).settings || {})[name] = v; }));
+    if (draft && textField) input.addEventListener('input', () => {
+      draft.values[name] = input.value; draft.error = false;
+      // Keep a typed token paired with the address shown when it was entered across live refreshes.
+      const destination = spec.bound_to && $('setting-' + spec.bound_to);
+      if (destination) draft.values[spec.bound_to] = destination.value;
+      for (const [key, field] of Object.entries(p.settings)) {
+        if (field.bound_to === name && draft.values[key]) {
+          delete draft.values[key];
+          $('setting-' + key).value = '';
+        }
+      }
+      $('connection-feedback').textContent = 'Unsaved changes';
+    });
+    input.id = 'setting-' + name; const row = field(spec.label, input); out.push(row);
+    const link = spec.link && spec.link.replace(/\{(\w+)\}/g, (_, n) => String(value(n) ?? '').replace(/\/+$/, ''));
+    const note = spec.note ? [spec.note, link && /^https?:\/\//.test(link) ? ' ' : null, link && /^https?:\/\//.test(link) ? el('a', {href: link, target: '_blank', rel: 'noreferrer', textContent: spec.link_text || link}) : null] : null;
+    if (note && typedOnly) out.push(el('p', {className: 'muted'}, ...note)); else if (note) row.firstChild.append(info(...note));   // (said outright while the page is set up, behind the icon after)
+  }
+  if (draft) {
+    const hasToken = p.secrets?.length > 0;
+    const status = p.state.setup || p.state.status || '';
+    const feedback = draft.error ? 'Could not save. Your edits are still here.' : draft.saving ? 'Saving…'
+      : Object.keys(draft.values).length ? 'Unsaved changes' : (hasToken ? 'Credentials saved. ' : '') + status;
+    out.push(el('p', {id: 'connection-feedback', role: 'status', textContent: feedback}),
+      el('button', {className: 'act', style: 'justify-self:start', textContent: 'Save and connect', disabled: draft.saving, onclick: async () => {
+        draft.saving = true;
+        const result = await change(config => {
+          const settings = table(config).settings ||= {};
+          for (const [name, v] of Object.entries(draft.values)) if (v || p.settings[name].type !== 'secret') settings[name] = v;
+        });
+        draft.saving = false; draft.error = !result?.config;
+        if (!draft.error) { draft.values = {}; if (mode === 'edit' && S.page === draft.page) tab = 'settings'; }
+        render();
+      }}));
+  }
+  return out;
+}
+
+// ---- the column beside the board
+function side() {
+  const p = plugin(), parts = []; fields = 0;
+  if (credentialDraft?.page !== S.page) credentialDraft = null;
+  if (!S.page) return $('side').replaceChildren(head('No page is switched on'), el('button', {className: 'act', style: 'justify-self:start', textContent: 'Manage plugins', onclick: () => show('plugins')}));
+  if (canvas) return $('side').replaceChildren(...canvas.column().filter(Boolean));
+  if (p.state.setup) {   // (a page that needs something typed before it can do anything shows that alone)
+    return $('side').replaceChildren(head(`Set up ${p.name}`), el('p', {className: 'muted', textContent: p.about || ''}),
+      el('section', {className: 'slot'}, ...settingFields(p, true)));
+  }
+  if (mode === 'view') return $('side').replaceChildren(...(hook('view') || []));
+  parts.push(coveredNote());
+  if (picked) {   // (something is being put on the board: that is all the column shows until it is put or given up)
+    const name = picked.pad ? padThing(pads()[picked.pad]).name : picked.copy ? padThing(picked.copy).name : item(picked.thing).name;
+    return $('side').replaceChildren(head(`${picked.copy ? 'Copying' : picked.pad ? 'Moving' : 'Placing'} ${name}`),
+      el('p', {className: 'muted', textContent: picked.copy ? 'Click each empty pad that should get a copy. Then change what each copy does.' : picked.pad ? 'Click the pad it should move to. If something is there, the two swap.' : 'Click the pad it should go on.'}),
+      el('div', {className: 'pair'},
+        ...(picked.thing !== undefined && hook('placing', item(picked.thing)) || []),
+        el('button', {className: 'act', textContent: picked.copy ? 'Stop copying' : 'Cancel', onclick: () => pick(picked)})));
+  }
+  if (selected) {
+    const done = () => { selected = null; choosing = null; render(); };
+    if (isRound(selected)) {
+      const f = does(selected), value = !f ? '' : f.all ? 'all:' + f.all : (f.guest ? 'guest:' : 'page:') + f.action;
+      const groups = [['', [['', 'Nothing']]]];
+      if (Object.keys(p.actions).length) groups.push([`Only on ${p.name}`, Object.keys(p.actions).map(a => ['page:' + a, actionName(a)])]);
+      if (guest() && Object.keys(S.plugins[guest()].actions).length) groups.push([`Only in ${S.plugins[guest()].name}`, Object.keys(S.plugins[guest()].actions).map(a => ['guest:' + a, actionName(a)])]);
+      groups.push(['On every page', everywhere().map(g => ['all:' + g, allName(g)])]);
+      parts.push(head(place(selected).replace(/^./, c => c.toUpperCase()), 'round button', done), Object.assign(field('Does', chooser(groups, value, v => { const [scope, ...rest] = v.split(':'); setRound(selected, scope, rest.join(':')); })), {className: 'field tight plain'}),
+        p.holds && f && f.action && f.action.startsWith('bank:') ? el('p', {className: 'muted', textContent: 'A tap goes to this bank and stays there. Holding the button shows the bank only while it is held.'}) : null,
+        el('p', {className: 'muted', textContent: 'If this is already on another button, it moves here.'}));
+    } else if (!p.thing) parts.push(head(p.name, place(selected), done), el('p', {className: 'muted', textContent: p.whole || 'This page draws on all 64 pads by itself, so there is nothing to put on a single pad.'}));
+    else {
+      const to = pads()[selected], key = selected, slotted = p.items.some(t => Array.isArray(t.taps));   // (a page whose things say what a tap can do has two slots a pad)
+      parts.push(head(to ? to.name || padThing(to).name : 'Empty pad', place(key) + (inside ? ` in the subpage of ${ownerName(bankPads()[inside.key], inside.key)}` : p.banks ? ` in ${table().banks[bank()].name}` : ''), done));
+      const set = (name, v) => change(config => { const pad = pads(config)[key]; if (v === undefined) delete pad[name]; else pad[name] = v; });
+      const option = ([name, spec]) => field(spec.label, control(spec, to[name] ?? spec.default, v => set(name, v)));
+      const options = () => Object.entries(p.pad || {}).map(option);
+      const choose = how => { choosing = how; finding = only = room = ''; render(); if ($('finder')) $('finder').focus(); const now = document.querySelector('#side .inlinepick .thing.picked'); if (now) now.scrollIntoView({block: 'nearest'}); };
+      const say = text => el('p', {className: 'muted', textContent: text});
+      if (p.pad_actions) {
+        const choices = [['', [['', 'Play a clip'], ...Object.entries(p.actions)]]];
+        parts.push(field('Pad function', chooser(choices, to?.action || '', action => setPad(key, action ? {action} : null))));
+      }
+      if (to?.action) {
+        parts.push(say('This pad operates the assigned control in this bank.'));
+      } else if (!slotted) {
+        const thing = to && item(to.thing), open = !to || choosing === 'tap', what = (p.thing || 'thing').toLowerCase();
+        parts.push(el('section', {className: 'slot'},
+          field(p.thing || 'On this pad', Object.assign(el('button', {className: 'device' + (thing ? '' : ' none'), onclick: () => to ? choose(choosing ? null : 'tap') : $('finder') && $('finder').focus()}, thing ? el('i', {style: `background:${thing.colour}`}) : null,
+            el('span', {className: 'label'}, el('b', {textContent: thing ? thing.name : `Choose a ${what}`}))), {ariaExpanded: String(open)})),
+          open ? el('div', {className: 'inlinepick'}, pickFrom(p.items, t => thingTile(t, () => { choosing = null; setPad(key, {...to, thing: t.id}); }, thing ? thing.id : ''))) : null,
+          ...(to && !open ? options() : [])));
+      } else {
+        // A pad is two things that have nothing to do with each other: what a tap does and what a hold does. Each is
+        // nothing, something done with a device, or the pad's own subpage. The pad's table keeps them as `thing` and
+        // `tap`, `of` and `hold` (docs/plugins.md): read here, changed, and written back whole.
+        const main = to && to.thing !== undefined ? item(to.thing) : null, held = to && to.of !== undefined ? item(to.of) : main;
+        const known = (t, does) => does === 'controls' ? t.controls : does && tapEntry(t, does);
+        const first = (t, slot, not) => tapsOf(t).length ? startTap(not && tapsOf(t).find(([, , , spec]) => spec) || tapsOf(t).find(([id]) => id !== not) || tapsOf(t)[0]) : slot === 'hold' && t.controls ? 'controls' : null;   // (what it does until the owner chooses; not what the other slot does already)
+        const tapDoes = main ? (known(main, to.tap) && to.tap !== 'controls' ? to.tap : to.tap === undefined ? firstTap(main) : 'none') : 'none';
+        const lost = t => !!t && !Array.isArray(t.taps);   // (a device Home Assistant no longer has, or the page has not heard of yet: what is set for it is kept, not read as nothing)
+        const slots = {tap: !to ? {kind: 'none'} : to.tap === 'page' && !inside ? {kind: 'page'} : lost(main) && to.tap !== 'none' ? {kind: 'device', thing: main.id, does: to.tap, lost: true} : main && tapDoes !== 'none' ? {kind: 'device', thing: main.id, does: tapDoes} : {kind: 'none'}};
+        slots.hold = !to ? {kind: 'none'} : to.hold === 'page' ? {kind: inside || slots.tap.kind === 'page' ? 'none' : 'page'} : lost(held) && typeof to.hold === 'string' && to.hold !== 'none' ? {kind: 'device', thing: held.id, does: to.hold, lost: true} : held && known(held, to.hold) ? {kind: 'device', thing: held.id, does: to.hold} : {kind: 'none'};
+        const put = (next, more = {}) => { choosing = null; const {thing, tap, hold, of, ...kept} = {...to, ...more}, t = next.tap, h = next.hold;
+          if (t.kind === 'none' && h.kind === 'none') return setPad(key, null);
+          const pad = {...kept}, device = t.kind === 'device' ? t.thing : h.kind === 'device' ? h.thing : undefined;
+          if (device !== undefined) pad.thing = device;
+          if (t.kind === 'page') pad.tap = 'page'; else if (device !== undefined) pad.tap = t.kind === 'device' ? t.does : 'none';
+          if (h.kind === 'page') pad.hold = 'page'; else if (h.kind === 'device') { pad.hold = h.does; if (h.thing !== device) pad.of = h.thing; }
+          setPad(key, pad); };
+        const seg = (on, text, go) => { const b = el('button', {textContent: text, onclick: go}); b.setAttribute('aria-pressed', on); return b; };
+        const subpage = () => { const count = Object.keys(to.sub || {}).length;
+          return el('div', {className: 'peek'}, count ? thumb(bankPicture({pads: to.sub || {}})) : null, el('div', {className: 'group'}, el('span', {className: 'muted', textContent: count ? `${count} pad${count === 1 ? '' : 's'} on it` : 'Nothing on it yet'}),
+            el('button', {className: 'act', style: 'justify-self:start', textContent: 'Edit the subpage', onclick: () => { inside = {page: S.page, bank: bank(), key}; selected = null; render(); }}))); };
+        const card = slot => {
+          const now = slots[slot], other = slots[slot === 'tap' ? 'hold' : 'tap'], open = choosing === slot, kind = open ? 'device' : now.kind, t = now.kind === 'device' ? item(now.thing) : null;
+          const fits = slot === 'hold' ? p.items.filter(i => tapsOf(i).length || i.controls) : p.items.filter(i => tapsOf(i).length);
+          const pickDevice = i => put({...slots, [slot]: {kind: 'device', thing: i.id, does: now.kind === 'device' && now.does && now.does !== 'controls' && tapEntry(i, now.does) ? now.does : first(i, slot)}});
+          const entry = t && now.does !== 'controls' ? tapEntry(t, now.does) : null, spec = entry && entry[3];
+          const act = does => { const e = tapEntry(t, does); put({...slots, [slot]: {...now, does}}, slot === 'tap' && e && e[3] && e[3].type === 'colour' ? {colour: tapValue(does)} : {}); };   // (a tap that sets a colour colours its pad)
+          const body = kind === 'device' ? [
+              field('Device', Object.assign(el('button', {className: 'device' + (t ? '' : ' none'), onclick: () => choose(open ? null : slot)}, t ? el('i', {style: `background:${t.colour}`}) : null,
+                el('span', {className: 'label'}, el('b', {textContent: t ? t.name : 'Choose a device'}), t && (t.kind || now.lost) ? el('small', {textContent: now.lost ? 'not in Home Assistant now' : [t.kind, t.place].filter(Boolean).join(' · ')}) : null)), {ariaExpanded: String(open)})),
+              open ? el('div', {className: 'inlinepick'}, pickFrom(fits, i => thingTile(i, () => pickDevice(i), t ? t.id : ''))) : null,
+              t && !open && now.lost ? say('What was set for it stays until you choose another device or Nothing.') : null,
+              t && !open && !now.lost ? field('Does', chooser([['', [...tapsOf(t).map(([id, words]) => [id, words]), ...(slot === 'hold' && t.controls ? [['controls', `Show its ${t.controls} on the pads`]] : [])]]], entry ? entry[0] : now.does,
+                v => act(v === 'controls' ? v : startTap(tapsOf(t).find(([id]) => id === v))))) : null,
+              t && !open && spec ? field('To', spec.type === 'colour' ? swatches(tapValue(now.does), c => act(`${entry[0]}:${c}`)) : amount(spec, tapValue(now.does), v => act(`${entry[0]}:${v}`), 'amount-' + slot)) : null,]
+            : kind === 'page' ? [
+              slot === 'hold' ? field('Stays open', switchButton(!!to.stays, 'Stays open after the pad is let go', on => set('stays', on || undefined))) : null,
+              slot === 'tap' || to.stays ? say('Press this pad again to close it.') : say('It shows only while this pad is held down.'),
+              subpage()]
+            : [];
+          return el('section', {className: 'slot'}, el('header', {}, el('h3', {textContent: slot === 'tap' ? 'When tapped' : 'When held'}),
+            el('div', {className: 'seg', role: 'group'}, seg(kind === 'none', 'Nothing', () => put({...slots, [slot]: {kind: 'none'}})),
+              seg(kind === 'device', 'Device', () => now.kind === 'device' ? choose(null) : other.kind === 'device' && first(item(other.thing), slot) ? put({...slots, [slot]: {kind: 'device', thing: other.thing, does: first(item(other.thing), slot, other.does)}}) : choose(slot)),
+              inside ? null : seg(kind === 'page', 'Subpage', () => put({...slots, [slot]: {kind: 'page'}, ...(other.kind === 'page' ? {[slot === 'tap' ? 'hold' : 'tap']: {kind: 'none'}} : {})})))), ...body);
+        };
+        const {name: _, ...unnamed} = to || {}, named = to ? el('input', {type: 'text', id: 'pad-name', value: to.name || '', placeholder: padName(unnamed)}) : null;   // (what the pad is called on this page, if not by what it does)
+        if (named) named.addEventListener('change', () => setTimeout(() => set('name', named.value || undefined)));
+        parts.push(card('tap'), card('hold'),
+          named ? Object.assign(field('Name', named), {className: 'field tight'}) : null,
+          to ? Object.assign(field('Pad colour', swatches(to.colour || padThing(to).colour, c => change(config => { pads(config)[key].colour = c; }))), {className: 'field tight'}) : null);
+      }
+      if (to && !to.action && !slotted) parts.push(Object.assign(field('Pad colour', swatches(to.colour || item(to.thing).colour, c => change(config => { pads(config)[key].colour = c; }))), {className: 'field tight'}));
+      parts.push(el('div', {className: 'pair'},
+        ...(to?.action ? [] : hook('padButtons', key, to) || []),
+        to && el('button', {className: 'quiet move-pad', textContent: 'Move', onclick: () => pick({pad: key, at: here()})}),   // (shown to a finger and to the keyboard: a mouse drags the pad)
+        to && p.holds && el('button', {className: 'quiet', textContent: 'Copy to other pads', onclick: () => pick({copy: clone(to), from: key + '|' + here()})}),
+        to && el('button', {className: 'quiet', textContent: 'Clear', title: 'Take everything off this pad', onclick: () => { choosing = null; setPad(key, null); }})));
+    }
+    return $('side').replaceChildren(...parts.filter(Boolean));
+  }
+  if (inside && bankPads()[inside.key]) {   // (in a pad's subpage, with no pad of it chosen: what it is, and the way back)
+    const owner = bankPads()[inside.key], back = () => { selected = inside.key; inside = null; render(); };
+    return $('side').replaceChildren(head(`Subpage of ${ownerName(owner, inside.key)}`, place(inside.key) + (p.banks ? ` in ${table().banks[bank()].name}` : '')),
+      el('p', {className: 'muted', textContent: `These pads show ${owner.tap === 'page' ? 'after a tap on that pad, until it is pressed again' : owner.stays ? 'once that pad is held, until it is pressed again' : 'while that pad is held'}. Click a pad on the board to put something on it.`}),
+      el('button', {className: 'quiet', style: 'justify-self:start', textContent: `← Back to ${p.banks ? table().banks[bank()].name : p.name}`, onclick: back}));
+  }
+  const tabs = [['things', p.items.some(t => Array.isArray(t.taps)) ? (p.banks ? 'This bank' : 'Pads') : p.things || p.name], p.settings && ['settings', 'Settings']].filter(Boolean);
+  if (!tabs.some(([id]) => id === tab)) tab = tabs[0][0];
+  parts.unshift(tabs.length > 1 ? el('div', {className: 'subtabs'}, ...tabs.map(([id, text]) => {
+    const b = el('button', {textContent: text, onclick: () => { tab = id; picked = null; render(); }}); b.setAttribute('role', 'tab'); b.setAttribute('aria-selected', id === tab); return b; })) : null);
+  if (tab === 'settings') {
+    if (p.state.status && !Object.values(p.settings).some(spec => spec.bound_to)) parts.push(field('Connection', el('span', {style: 'display:flex;align-items:center'}, el('span', {className: 'dot' + (p.state.status === 'Connected.' ? '' : ' bad')}), p.state.status)));
+    parts.push(...settingFields(p));
+  } else {   // (what the page has by itself; its plugin's own panel may add to it or put something else there)
+    const banks = p.banks && !inside ? bankGroup() : null;
+    const standard = p.thing && p.items.some(t => Array.isArray(t.taps)) ? [banks]
+      : p.thing ? [banks, el('div', {className: 'group'}, el('h3', {textContent: `Pick a ${p.thing.toLowerCase()}, then click a pad (or drag it there)`}), pickFrom(p.items, t => thingTile(t)))]
+      : [el('p', {className: 'muted', textContent: p.whole || ''})];
+    parts.push(...(hook('main', standard.filter(Boolean)) || standard));
+  }
+  $('side').replaceChildren(...parts.filter(Boolean));
+}
+// ---- a plugin's own part of this page: its folder may hold a panel.js, a module whose default export takes this
+// toolkit and gives back what it adds (docs/plugins.md). Without one a plugin has the standard column.
+const panels = {}, fetching = {};   // (what each plugin's panel.js gave back; the age of the one asked for)
+function hook(name, ...given) {
+  const own = (panels[S.page] || {})[name];
+  if (!own) return undefined;
+  try { return own(...given); } catch (error) { console.error(error); toast(`${plugin().name}'s own panel failed (${error.message}): the standard one is shown.`); return undefined; }
+}
+const kitFor = id => ({
+  id, el, field, chooser, switchButton, swatches, head, thumb, toast, clone, PALETTE,   // the parts this page is built from
+  ask: (what, data) => post(`/api/plugin/${id}/${what}`, data),   // the plugin's own request() on the board
+  act: name => act({action: name}),   // one of the plugin's own actions, as its round button does it
+  url: what => `/api/plugin/${id}/${what}`,
+  state: () => S, plugin: () => S.plugins[id], table: (config = S.config) => config.plugins[id] || {}, bank, pads, item,   // what is there
+  change, forget: () => { history = []; render(); }, refresh, redraw: render, repaint: draw,   // save a change to config.toml, fetch the state again, draw the page or only the board again
+  tile: thing => thingTile(thing), list: pickFrom, bankGroup,   // the standard pieces: a thing to place, a list of them, a bank's name and removal
+  placing: what => { picked = what; render(); },   // a thing to put on the next pad clicked ({thing: id}), or null to stop
+  files: ({accept = '', multiple = false} = {}) => new Promise(done => { const input = el('input', {type: 'file', accept, multiple}); input.addEventListener('change', () => done([...input.files])); input.addEventListener('cancel', () => done([])); input.click(); }),
+  wakeAudio: () => S.simulator && wake(),
+  play: (url, key) => { wake(); return sound(url, key).then(voice => voice.source); },   // a sound in this browser
+  canvas: next => { endCanvas(); canvas = next; next ? setMode('edit') : render(); },   // the board as the panel's own to draw on, until null
+  enable, plugins: which => { kind = which; show('plugins'); render(); },   // switch a plugin on or off; open the Plugins screen at one kind
+});
+function loadPanels() {
+  for (const [id, p] of Object.entries(S.plugins)) {
+    const wanted = p.enabled ? p.panel : null;   // (one that is switched off runs nothing, here either)
+    if (fetching[id] === wanted) continue;
+    fetching[id] = wanted; delete panels[id];
+    if (wanted) import(`/plugins/${id}/panel.js?${p.panel}`).then(module => { panels[id] = module.default(kitFor(id)) || {}; render(); })
+      .catch(error => { console.error(error); toast(`${p.name}'s own panel could not be loaded (${error.message}).`); });
+  }
+}
+
+let displayedParts = '';
+function renderFacts() {   // (beside the screens' names: what this page is talking to)
+  $('facts').hidden = !$('screen-login').hidden;
+  $('simulator-state').hidden = !S.simulator;
+  $('hardware-state').hidden = S.simulator;
+  $('hardware-state').textContent = (S.parts['Launchpad Pro'] || '').startsWith('found') ? 'USB connected' : 'USB disconnected';
+  $('battery-state').hidden = !S.battery;
+  if (S.battery) $('battery-state').textContent = 'Battery ' + S.battery.percent + ' %' + (S.battery.plugged ? ', charging' : '');
+}
+function renderParts() {
+  const parts = JSON.stringify(S.parts);
+  if (parts === displayedParts) return;
+  displayedParts = parts;
+  $('parts').replaceChildren(...Object.entries(S.parts).map(([name, state]) => {
+    const calibrate = name === 'Motion sensor' && /^found/.test(state);
+    return el('div', {className:'item'},
+      el('span', {className:'dot' + (/^not|^waiting/.test(state) ? ' none' : '')}),
+      el('div', {className:'name', textContent:name}), el('div', {className:'state', textContent:state}),
+      calibrate && el('button', {id:'flat', className:'quiet', textContent:'The board is lying flat now',
+        title:'Use this position as level for the tilt games.',
+        onclick:async () => { if (took(await post('/api/flat', {})).config) toast('Level saved for tilt games.'); }}));
+  }));
+}
+function render() {
+  if (!S) return;
+  loadPanels();
+  const p = plugin(), editing = mode === 'edit';
+  document.title = S.name; $('title').textContent = S.name;
+  renderFacts();
+  $('instrument').textContent = p.name;
+  $('instrument-about').textContent = p.about || '';
+  $('deck-tools').replaceChildren(...(!editing && !canvas && !p.state.setup ? hook('deckTools') || [] : []));
+  $('page-name').textContent = !S.power ? 'Pads off' : canvas ? canvas.title || p.name : p.state.scene || p.state.game || 'Pad layout';
+  $('board').className = 'board' + (canvas ? ' painting' : editing ? ' editing' : '') + (editing && !canvas && !p.thing ? ' whole' : '') + (picked ? ' placing' : '');
+  $('work').className = 'work' + (editing ? ' editing' : '') + (!editing && S.page && !p.state.setup && !panels[S.page]?.view && !canvas ? ' alone' : '');
+  if (S.page !== render.page) { render.page = S.page; latched.clear(); }   // (another page: what was held on the last one is let go by the board)
+  if (inside && (!editing || canvas || inside.page !== S.page || inside.bank !== bank() || !bankPads()[inside.key])) inside = null;
+  if (picked && picked.pad && (picked.at !== here() || !pads()[picked.pad])) picked = null;   // (a move is given up when its bank or subpage is left)
+  const shown = editing ? {} : names(), owner = inside && bankPads()[inside.key];
+  $('banks').hidden = !p.banks && !inside || !!canvas || !S.power || !!p.state.setup;
+  if (!$('banks').hidden) $('banks').replaceChildren(...(inside ? [el('button', {textContent: '← ' + (p.banks ? table().banks[bank()].name : p.name), onclick: () => { selected = inside.key; inside = null; render(); }}),
+    el('span', {className: 'crumb-text', textContent: `Subpage of ${ownerName(owner, inside.key)}`})] : bankTabs(editing)));
+  for (const key in cells) {
+    const cell = cells[key], to = isRound(key) ? does(key) : pads()[key];
+    cell.classList.toggle('bound', editing && !!to); cell.classList.toggle('sel', editing && !canvas && (key === selected || !!picked && (picked.pad === key || picked.from === key + '|' + here()))); cell.classList.remove('hl'); cell.classList.toggle('down', latched.has(key));
+    cell.draggable = editing && !canvas && !!to && !isRound(key);
+    const words = canvas ? '' : isRound(key) ? (editing ? '' : buttonFace(key, shown[key] || '', to)) : finger(key) ? 'opens' : editing ? (to ? padName(to) : '') : shown[key] || '';
+    if (cell.firstChild.textContent !== words) { cell.firstChild.textContent = words; cell.firstChild.style.setProperty('--fit', Math.max(.78, Math.min(1, 7 / Math.max(...words.split(/\s+/).map(w => w.length))))); }
+    cell.classList.toggle('holds', editing && !canvas && !isRound(key) && !!to && !!to.hold && to.hold !== 'none' && to.hold !== 'page');
+    cell.classList.toggle('more', editing && !canvas && !isRound(key) && !!to && !inside && (to.hold === 'page' || to.tap === 'page'));
+    cell.classList.toggle('finger', !canvas && finger(key));
+    cell.disabled = !!(!editing && S.power && !isRound(key) && p.state.pad_hints && !Object.hasOwn(p.state.pad_hints, key));
+    const label = describe(key, shown);
+    cell.setAttribute('aria-label', label); cell.title = editing || isRound(key) || cell.firstChild.textContent ? label : '';
+  }
+  $('undo').hidden = !editing; $('undo').disabled = canvas ? !canvas.undoable() : !!pending || !history.length;
+  $('hint').textContent = canvas ? canvas.hint || '' : p.state.setup ? `${p.name} is not connected yet: fill in what it needs beside the board.` : !S.power && !editing ? 'Power only blanks the pads; the board keeps running. Any press wakes it.' : editing
+    ? (inside ? 'The dashed pad is the one that opens this subpage: nothing can go there.' : p.thing ? (p.holds ? 'Click a pad to choose what a tap and a hold on it do, or a round button to change it. Drag pads to move them.' : 'Click a pad or a round button to change it. Drag pads to move them.') : p.whole || '')
+    : latched.size ? `Held down: ${[...latched].map(key => describe(key).split(' · ').pop()).join(', ')}. Click it again or press Esc to let go.`
+    : (S.simulator ? 'Simulator · Play the pads here. Sound comes from this browser.' : 'Live board · Pressing a pad here plays it on the physical board.')
+      + (p.holds ? ' Keep the mouse down on one to hold it: it stays held until you click it again.' : ' Shift-click keeps one held down until you click it again.');
+  $('where').textContent = selected ? describe(selected) : '';
+  $('bright').value = S.config.brightness; $('sleep').value = S.config.sleep; $('limit').value = S.config.charge_limit >= 100 ? 100 : 80;
+  $('charge-row').hidden = !/^found/.test(S.parts['Battery board'] || ''); $('charge-note').hidden = $('charge-row').hidden || S.config.charge_limit < 100;
+  $('restart').hidden = S.simulator;
+  renderBroker();
+  $('admin-login').hidden = S.is_admin; $('password-fields').hidden = !S.is_admin;
+  $('password-label').textContent = S.password ? 'New password' : 'Password'; $('set-password').textContent = S.password ? 'Change the password' : 'Set a password';
+  $('no-password').hidden = !S.password || S.requires_owner; $('no-password').textContent = S.locked ? 'Open the page for playing' : 'Remove the password';
+  $('about').textContent = `Version ${S.version}`;
+  renderParts();
+  const at = document.activeElement, kept = at && at.id && at.matches('input, select, button[role="switch"]') && $('side').contains(at) ? [at.id, /text|password/.test(at.type), at.value, at.selectionStart] : null;
+  pagesRow(); side(); plugList(); draw();
+  if (kept && $(kept[0])) { const again = $(kept[0]); again.focus(); if (kept[1]) { again.value = kept[2]; again.setSelectionRange(kept[3], kept[3]); } }   // (drawn again while a field was in use: the keyboard stays in it, and what was being typed)
+}
+function setMode(next) {
+  if (next === 'view' && !canLeaveCanvas()) return;
+  mode = next; selected = null; choosing = null; inside = null; picked = null; if (mode === 'view') endCanvas();
+  for (const key of latched) press(key, false); latched.clear();
+  $('mode-view').setAttribute('aria-pressed', mode === 'view'); $('mode-edit').setAttribute('aria-pressed', mode === 'edit'); render();
+}
+$('mode-view').addEventListener('click', () => setMode('view'));
+$('mode-edit').addEventListener('click', () => setMode('edit'));
+$('undo').addEventListener('click', async () => {
+  if (canvas) { canvas.undo(); render(); }
+  else if (history.length && !pending) {
+    const changes = history.at(-1), config = clone(S.config);
+    for (const {path, before, after} of changes) {
+      const parent = path.slice(0, -1).reduce((value, key) => value?.[key], config), key = path.at(-1);
+      if (!parent || !sameValue(parent[key], after)) {
+        history.pop(); render(); toast('This setting changed elsewhere. Its newer value was kept.'); return;
+      }
+      if (before === undefined) delete parent[key]; else parent[key] = before;
+    }
+    selected = null;
+    if ((await saveConfig(config, false))?.config) { history.pop(); render(); }
+  }
+});
+
+// ---- the active pages, in the order of their buttons
+function pagesRow() {
+  $('pages').replaceChildren(...S.pages.map(id => { const b = el('button', {onclick: () => { if (!canLeaveCanvas()) return; selected = picked = null; endCanvas(); act({open: id}); }}, el('i', {style: `background:${S.plugins[id].colour}`}), S.plugins[id].name);
+    if (id === current()) b.setAttribute('aria-current', 'true'); return b; }));
+}
+
+// ---- Plugins and Settings
+const enable = (id, on) => change(config => { (config.plugins[id] = config.plugins[id] || {}).enabled = on; });
+async function retry(id) {   // (a stopped plugin switched on: off and on again, which reads its files afresh)
+  for (const on of [false, true]) { if (!(await enable(id, on))?.config) return; }
+  toast(S.plugins[id].error ? 'Still stopped: fix the error first.' : `${S.plugins[id].name} runs again.`);
+}
+function plugList() {
+  const label = {page: 'Page', game: 'Game', scene: 'Scene'};
+  const rows = Object.entries(S.plugins).filter(([, p]) => p.kind === kind).map(([id, p]) => {
+    const name = Object.keys(S.config.buttons).find(k => S.config.buttons[k] === 'open:' + id);
+    const pad = Object.values(S.config.plugins).flatMap(table => Object.entries(table.pads || {})).filter(([, to]) => to.thing === id).map(([key]) => key)[0];   // (the pad it has on a menu)
+    const state = p.error ? 'Stopped' : !p.enabled ? 'Off' : kind === 'scene' ? 'Plays in Pixel Art' : kind === 'game' ? (pad ? `On the menu, ${place(pad)}` : 'Not on the menu yet') : name ? `On button ${place(keyOf(name))}` : 'On, no button yet';
+    return {id, p, state, detail: p.error ? `Stopped: ${p.error}. The rest of the board keeps running.` : `${label[kind]} · version ${p.version || '?'}${p.needs && p.needs.length ? ' · needs ' + p.needs.join(', ') : ''}`}; });
+  const rowFor = r => el('div', {className: 'item'}, el('span', {className: 'sw', style: `background:${r.p.colour || '#888899'}`}),
+    el('div', {}, el('div', {className: 'name', textContent: r.p.name}), el('div', {className: r.p.error ? 'err' : 'muted', textContent: r.detail})),
+    el('div', {className: 'state'}, el('span', {className: 'dot ' + (r.p.error ? 'bad' : !r.p.enabled ? 'none' : '')}), r.state),
+    el('div', {className: 'pair'}, ...(removing === r.id ? [
+        el('button', {className: 'quiet', textContent: 'Remove, keep what it saved', onclick: () => remove(r.id, false)}),
+        el('button', {className: 'quiet', textContent: 'Remove with what it saved', onclick: () => remove(r.id, true)}),
+        el('button', {className: 'link', textContent: 'Cancel', onclick: () => { removing = null; render(); }})]
+      : [r.p.own ? el('button', {className: 'quiet', textContent: 'Remove', onclick: () => { removing = r.id; render(); }}) : null,
+        switchButton(r.p.enabled && !r.p.error, r.p.name, on => r.p.error && on ? retry(r.id) : enable(r.id, on))])));
+  const count = k => Object.values(S.plugins).filter(p => p.kind === k).length;
+  $('kinds').replaceChildren(...[['page', 'Pages'], ['game', 'Games'], ['scene', 'Scenes']].map(([id, text]) => {
+    const b = el('button', {textContent: `${text} ${count(id)}`, onclick: () => { kind = id; removing = null; render(); }}); b.setAttribute('aria-pressed', id === kind); return b; }));
+  const none = text => [el('p', {className: 'muted', style: 'padding: 10px 0', textContent: text})];
+  const shipped = rows.filter(r => !r.p.own).map(rowFor), mine = rows.filter(r => r.p.own).map(rowFor);
+  $('shipped').replaceChildren(...(shipped.length ? shipped : none(`No ${kind}s are shipped yet.`)));
+  $('yours').replaceChildren(...(mine.length ? mine : none(`None yet. A ${kind} you add shows up here.`)));
+}
+async function remove(id, data) { removing = null; took(await api('/api/plugins/' + encodeURIComponent(id) + (data ? '?data=delete' : ''), {method: 'DELETE'})); }
+$('add-plugin').addEventListener('click', () => S.is_admin ? $('zip-file').click() : api('/api/admin'));
+$('zip-file').addEventListener('change', async event => { const file = event.target.files[0]; event.target.value = ''; if (file && took(await post('/api/plugins', file)).config) toast('Added. It is switched on.'); });
+$('bright').addEventListener('change', () => change(config => { config.brightness = +$('bright').value; }));
+let brokerDirty = false, brokerSaving = false, brokerError = '';
+function renderBroker() {
+  const broker = S.config.mqtt || {};
+  if (!brokerDirty) {
+    $('mqtt-host').value = broker.host || '';
+    $('mqtt-username').value = broker.username || '';
+    $('mqtt-password').value = '';
+  }
+  $('mqtt-password').placeholder = S.broker_password ? 'Password saved on the board' : '';
+  for (const input of $('mqtt-form').querySelectorAll('input')) input.readOnly = brokerSaving || !S.is_admin;
+  $('mqtt-save').disabled = !brokerDirty || brokerSaving || !S.is_admin;
+  const status = brokerSaving ? 'Saving…' : brokerError || (brokerDirty ? 'Unsaved changes' : S.mqtt_status);
+  if ($('mqtt-status').textContent !== status) $('mqtt-status').textContent = status;
+}
+$('mqtt-form').addEventListener('input', () => { brokerDirty = true; brokerError = ''; renderBroker(); });
+$('mqtt-form').addEventListener('submit', async event => {
+  event.preventDefault();
+  if (!brokerDirty || brokerSaving) return;
+  const host = $('mqtt-host').value.trim(), username = $('mqtt-username').value.trim(), password = $('mqtt-password').value;
+  if (!host && (username || password)) {
+    brokerError = 'Enter the broker address, or clear all three fields to disconnect.';
+    renderBroker(); return;
+  }
+  brokerSaving = true; renderBroker();
+  try {
+    const saved = await change(config => {
+      if (!host) { delete config.mqtt; return; }
+      config.mqtt = {...config.mqtt, host, username};
+      if (password) config.mqtt.password = password;
+    });
+    if (saved?.config) brokerDirty = false;
+  } finally {
+    brokerSaving = false;
+    brokerError = brokerDirty ? 'MQTT settings could not be saved. Try again.' : '';
+    renderBroker();
+  }
+});
+$('sleep').addEventListener('change', () => change(config => { config.sleep = +$('sleep').value; }));
+$('limit').addEventListener('change', () => change(config => { config.charge_limit = +$('limit').value; }));
+$('restart').addEventListener('click', async () => { if (!(await post('/api/restart', {})).error) toast('Restarting: the page is back in a few seconds.'); });
+$('update').addEventListener('click', async () => { if (!(await post('/api/update', {})).error) toast('Updating: the board restarts when it is done.'); });
+async function lookForUpdate() { const found = await api('/api/update'); $('update').hidden = S.simulator || !found.available; $('update').textContent = 'Update to ' + found.latest; }
+async function setPassword(request) { if (took(await post('/api/password', request)).config) { $('password').value = ''; toast(request.password ? (S.locked ? 'The page now asks for this password.' : 'Managing the board now asks for this password.')
+    : S.password ? 'The page is open for playing. Managing the board still asks for the password.' : 'Password removed. The board is open on your local network.'); } }
+$('theme').value = document.documentElement.dataset.theme || '';
+$('theme').addEventListener('change', event => {
+  const chosen = event.target.value;
+  if (chosen) document.documentElement.dataset.theme = chosen; else delete document.documentElement.dataset.theme;
+  try { chosen ? localStorage.setItem('theme', chosen) : localStorage.removeItem('theme'); } catch {}   // (a browser that keeps nothing: the choice lasts until the page is closed)
+});
+$('set-password').addEventListener('click', () => $('password').value ? setPassword({password: $('password').value}) : toast('Type the password first.'));
+// (Open for playing while the password locks the page; after that the button removes it, and asks first: a second
+// click meant for the first must not take the password away.)
+$('no-password').addEventListener('click', () => {
+  if (S.locked) setPassword({password: '', open: true});
+  else if (confirm('Remove the password? Anyone on your network can then manage the board.')) setPassword({password: '', remove: true});
+});
+$('reset').addEventListener('click', () => { $('reset-sure').hidden = !$('reset-sure').hidden; });
+$('reset-no').addEventListener('click', () => { $('reset-sure').hidden = true; });
+async function factoryReset(files) {   // (not to be undone: what Undo remembers goes with it)
+  $('reset-sure').hidden = true;
+  if (took(await post('/api/reset' + (files ? '?files=delete' : ''), {})).config) { history = []; selected = picked = inside = null; endCanvas(); render(); if (S.requires_owner) askPassword({setup:true}); else toast('The board is as a new one comes.'); }
+}
+$('reset-keep').addEventListener('click', () => factoryReset(false));
+$('reset-all').addEventListener('click', () => factoryReset(true));
+const screens = [['board', 'Board'], ['plugins', 'Plugins'], ['settings', 'Settings']];
+function show(next) { screen = next; if (next === 'settings' && S) lookForUpdate(); screens.forEach(([id]) => { $('screen-' + id).hidden = id !== next; id === next ? $('nav-' + id).setAttribute('aria-current', 'page') : $('nav-' + id).removeAttribute('aria-current'); }); }
+screens.forEach(([id, text]) => $('nav').append(el('button', {id: 'nav-' + id, textContent: text, onclick: () => show(id)})));
+show('board');
+
+// ---- live: the board's frames (the simulator, or the mirror of the real board), and word of anything that changed
+let stream = null;
+function listen() {
+  if (stream || !S) return;
+  stream = new EventSource('/api/live');
+  let firstFrame = true, receivedFrame = false, syncing = false, latestRevision;
+  async function syncState(revision) {
+    latestRevision = revision;
+    if (syncing || pending || revision === S.revision) return;
+    syncing = true;
+    try {
+      // A second edit can be the last live frame, even when the earlier state request is still in flight.
+      do {
+        revision = latestRevision;
+        await refresh();
+      } while (!pending && latestRevision !== revision && latestRevision !== S.revision);
+    } finally { syncing = false; }
+  }
+  stream.onopen = () => { firstFrame = true; queuedUntil = 0; };
+  stream.onmessage = event => {
+    const news = JSON.parse(event.data);
+    live = news.frame;
+    if (gain !== news.gain) {
+      gain = news.gain;
+      if (master) {
+        const now = audio.currentTime;
+        master.gain.cancelScheduledValues(now);
+        if (activeVoices.size) master.gain.setTargetAtTime(gain, now, 128 / audio.sampleRate);
+        else master.gain.setValueAtTime(gain, now);
+      }
+    }
+    if (S.simulator) {
+      // A reconnected stream starts with its recent history. A lower count means the board restarted.
+      if (firstFrame && lastSound > (news.sounds.at(-1)?.n || 0)) lastSound = 0;
+      sounds(news.sounds, firstFrame && receivedFrame ? news.sound_time : undefined);
+      firstFrame = false;
+      receivedFrame = true;
+    }
+    if (!canvas && (mode === 'view' || !plugin().thing)) draw();
+    syncState(news.revision);
+  };
+  // Prepare the simulator speaker while the page opens. The first gesture unlocks playback.
+  if (S.simulator && (window.AudioContext || window.webkitAudioContext)) context();
+}
+refresh().then(() => {
+  listen();
+  if (location.hash === '#owner-sign-in' && S) {
+    window.history.replaceState(null, '', location.pathname + location.search);
+    show('settings');
+    if (!S.is_admin) api('/api/admin');
+  }
+});
+</script>
+</body>
+</html>

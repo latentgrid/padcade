@@ -1,0 +1,185 @@
+/* The Soundboard in View mode shares the deck's live state and theme. */
+.sb-studio { min-width: 0; container-type: inline-size; }
+.sb-studio button { font-size: .875rem; font-weight: 600; line-height: 1.25; }
+.sb-studio svg, .sb-bin svg { width: 1.15rem; height: 1.15rem; flex: none; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+.sb-studio svg .solid { fill: currentColor; stroke: none; }
+.thing .sb-bin { color: var(--bad); display: grid; place-items: center; }
+.thing .sb-bin svg { width: .85rem; height: .85rem; }
+.sb-with-icon { display: inline-flex; align-items: center; gap: .4em; }
+.sb-header, .sb-transport, .sb-sectionhead, .sb-performance { display: flex; align-items: center; flex-wrap: wrap; gap: .5rem; }
+
+/* ---- the song */
+.sb-title { margin-right: auto; min-width: 0; flex: 1 1 7em; }
+.sb-title small { color: var(--muted); font-size: .8rem; }
+.sb-title h2 {
+  font-size: clamp(1.3rem, 6cqi, 1.65rem); line-height: 1.18;
+  letter-spacing: -.035em; overflow-wrap: anywhere; margin: .12rem 0;
+}
+.sb-title input { width: 100%; min-width: 0; margin-top: .2rem; }
+.sb-icon { display: grid; place-items: center; width: 2.25rem; height: 2.25rem; padding: 0; border: 1px solid transparent; border-radius: 8px; background: transparent; color: var(--muted); }
+.sb-icon:hover:enabled, .sb-icon[aria-expanded="true"] { background: var(--soft); color: var(--ink); }
+.sb-icon.framed { border-color: var(--line); }
+.sb-icon.danger, .sb-icon.danger:hover:enabled { color: var(--bad); }
+.sb-menu { position: relative; }
+.sb-menu > div {
+  position: absolute; right: 0; top: calc(100% + 4px); z-index: 5; min-width: 12.5rem; display: grid; padding: 5px;
+  background: var(--surface); border: 1px solid var(--line); border-radius: 11px; box-shadow: 0 8px 24px #0003;
+}
+.sb-menu > div button { display: flex; align-items: center; gap: .6rem; text-align: left; border: 0; background: none; padding: .45rem .6rem; border-radius: 7px; font-weight: 500; }
+.sb-menu > div button svg { color: var(--muted); }
+.sb-menu > div button:hover:enabled { background: var(--soft); }
+.sb-menu > div hr { border: 0; border-top: 1px solid var(--line); margin: 4px 2px; width: auto; }
+.sb-menu > div .danger, .sb-menu > div .danger svg { color: var(--bad); }
+/* What was cleared or deleted last, with its Undo; also what the board is waiting for. */
+.sb-notice {
+  display: flex; align-items: center; justify-content: space-between; gap: .6rem; margin: .7rem 0 0; padding: .45rem .7rem;
+  border-radius: 9px; background: color-mix(in srgb,var(--accent) 9%, var(--surface)); font-size: .84rem;
+}
+.sb-notice > span { display: flex; align-items: center; gap: .7rem; flex: none; }
+.sb-notice button { border: 0; background: none; padding: 0; color: var(--accent); }
+.sb-notice .sb-away { color: var(--muted); font-size: 1.15rem; line-height: 1; padding: 0 .15rem; }
+
+/* ---- playing */
+.sb-transport { margin: 1rem 0 0; }
+.sb-transport button { min-height: 36px; }
+.sb-play { background: var(--ink); color: var(--bg); border-color: var(--ink); min-width: 4.9rem; }
+.sb-toggle[aria-pressed="true"] { color: var(--accent); background: color-mix(in srgb,var(--accent) 10%,var(--surface)); border-color: var(--accent); }
+.sb-tempo { display: flex; align-items: center; gap: .35rem; margin-left: auto; color: var(--muted); font-size: .8rem; }
+.sb-tempo input { width: 4.2em; padding: .28rem .25rem; text-align: center; border: 1px solid var(--line); border-radius: 7px; background: var(--surface); color: var(--ink); }
+.sb-beats { display: grid; grid-template-columns: repeat(8, 1fr); gap: 4px; margin: .8rem 0 1rem; }
+.sb-beats span { --beat-off: var(--line); height: 4px; border-radius: 3px; background: var(--beat-off); }
+.sb-beats span:nth-child(4n+1) { --beat-off: color-mix(in srgb,var(--muted) 35%, var(--line)); }
+.sb-beats span[style] { animation-name: sb-beat; animation-iteration-count: infinite; animation-timing-function: steps(1,end); }
+@keyframes sb-beat { 0% { background: var(--accent); } 12.5%, 100% { background: var(--beat-off); } }
+.sb-record { color: var(--bad); }
+.sb-record[aria-pressed="true"] { background: #922b40; border-color: #922b40; color: white; }
+.sb-capturing { font-size: .8rem; color: var(--bad); font-variant-numeric: tabular-nums; }
+.sb-link { border: 0; background: none; padding: .3rem .2rem; color: var(--accent); }
+
+/* ---- tracks */
+.sb-sectionhead { gap: .45rem; margin-top: 1.1rem; }
+.sb-sectionhead h3 { font: 600 1.06rem/1.3 var(--display); color: var(--ink); }
+.sb-sectionhead ~ p.muted { margin: .26rem 0 .5rem; font-size: .77rem; }
+/* One way back, in the same place and the same words, from whatever is open instead of the tracks. */
+.sb-back { padding: .3rem .7rem .3rem .5rem; }
+.sb-back + h3 { margin-left: .2rem; }
+.sb-tracks { display: grid; gap: 1px; }
+.sb-track-row { position: relative; display: grid; grid-template-columns: auto minmax(0,1fr) auto auto; align-items: center; gap: .15rem; border-bottom: 1px solid var(--line); }
+.sb-track-row > .sb-track:only-child { grid-column: 1 / -1; }
+.sb-track {
+  display: grid; grid-template-columns: 1.7rem minmax(0,1fr) minmax(2.8rem,23%);
+  align-items: center; gap: .6rem; text-align: left; min-height: 42px; padding: .35rem .45rem;
+  background: transparent; border: 1px solid transparent; border-radius: 7px;
+  touch-action: manipulation; user-select: none;
+}
+.sb-track:hover:enabled { background: var(--soft); }
+.sb-track.sb-active { border-color: color-mix(in srgb,var(--accent) 54%, var(--line)); background: color-mix(in srgb,var(--accent) 9%, var(--surface)); }
+.sb-number { display: grid; place-items: center; height: 1.7rem; border-radius: 5px; background: var(--track-colour); color: #1b1727; font-variant-numeric: tabular-nums; }
+.sb-track-label strong, .sb-track-label small { display: block; }
+.sb-track-label strong { overflow-wrap: anywhere; }
+.sb-track-label small { margin-top: .14rem; font-size: .7rem; font-weight: 500; color: var(--muted); }
+.sb-pattern { display: grid; grid-template-columns: repeat(16, minmax(0, 1fr)); gap: 1px; }
+.sb-pattern span { height: .72rem; background: var(--line); border-radius: 1px; }
+.sb-pattern .hit { background: var(--muted); }
+.sb-muted .sb-pattern, .sb-muted .sb-number { opacity: .45; }
+.sb-empty .sb-number, .sb-empty .sb-track-label { opacity: .6; }
+.sb-rec, .sb-rec:hover:enabled { color: var(--bad); }
+.sb-rec[aria-pressed="true"], .sb-rec[aria-pressed="true"]:hover:enabled { background: #922b40; color: white; }
+/* Drag a track by its grip to another place; the line shows where it will land. */
+.sb-grip { width: 1.5rem; cursor: grab; touch-action: none; color: color-mix(in srgb, var(--muted) 60%, transparent); }
+.sb-grip:active { cursor: grabbing; }
+.sb-track-row.dragging { opacity: .45; }
+.sb-track-row.drop-before::before, .sb-track-row.drop-after::after { content: ''; position: absolute; left: 0; right: 0; height: 3px; border-radius: 2px; background: var(--accent); z-index: 2; }
+.sb-track-row.drop-before::before { top: -2px; }
+.sb-track-row.drop-after::after { bottom: -2px; }
+.sb-option-fields { grid-column: 1 / -1; display: grid; gap: .6rem; padding: .6rem .5rem .85rem; }
+.sb-option-fields .field { grid-template-columns: 4.6rem minmax(0, 1fr); gap: 6px 10px; }
+.sb-option-fields input { max-width: 100%; min-width: 0; }
+.sb-option-fields .seg { justify-self: start; }
+.sb-option-fields .seg button { white-space: nowrap; }
+.sb-tools { display: flex; align-items: center; gap: .3rem; }
+.sb-tools .gap { flex: 1; }
+
+/* ---- songs and takes */
+.sb-songs { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 4px; }
+.sb-songs button { min-height: 3.1rem; padding: .3rem .35rem; overflow-wrap: anywhere; font-weight: 500; color: var(--muted); }
+.sb-songs button.filled { color: var(--ink); font-weight: 600; }
+.sb-songs button.act { color: var(--accent-ink); }
+.sb-songs + .pair { margin-top: .6rem; }
+.sb-takes { margin-top: .5rem; }
+.sb-take-row { display: grid; grid-template-columns: auto minmax(0, 1fr) auto auto auto; align-items: center; gap: .25rem; border-bottom: 1px solid var(--line); padding: .25rem 0; }
+.sb-take-row small { color: var(--muted); font-variant-numeric: tabular-nums; padding-inline: .4rem; }
+.sb-take-row input { min-width: 0; width: 100%; }
+.sb-take-name { text-align: left; overflow-wrap: anywhere; background: transparent; border: 0; padding: .35rem .3rem; border-radius: 6px; }
+.sb-take-name:hover { background: var(--soft); }
+.sb-take-name[aria-pressed="true"] { background: var(--soft); color: var(--accent); }
+.sb-studio > .slot { margin-top: .65rem; }
+
+.sb-guide { margin-top: 1rem; border-top: 1px solid var(--line); padding-top: .7rem; }
+.sb-guide summary { color: var(--accent); font-weight: 600; font-size: .86rem; cursor: pointer; }
+.sb-guide h4 { margin: .85rem 0 .3rem; font: 600 .8rem/1.3 var(--text); color: var(--ink); }
+.sb-guide dl { display: grid; grid-template-columns: minmax(0, 11.5rem) minmax(0, 1fr); gap: .22rem .8rem; margin: 0; font-size: .82rem; }
+.sb-guide dt { color: var(--ink); }
+.sb-guide dd { margin: 0; color: var(--muted); }
+@container (max-width: 380px) {
+  .sb-track { grid-template-columns: 1.5rem minmax(0,1fr); gap: .45rem; }
+  .sb-track .sb-pattern { display: none; }
+  .sb-tempo { margin-left: 0; }
+  .sb-header button { padding-inline: .5rem; }
+  .sb-guide dl { grid-template-columns: minmax(0, 1fr); gap: 0; }
+  .sb-guide dd { margin-bottom: .35rem; }
+  .sb-option-fields .field { grid-template-columns: 3.3rem minmax(0, 1fr); }
+  .sb-option-fields .seg button { padding-inline: 8px; }
+}
+@media (pointer: coarse) {
+  .sb-track, .sb-icon, .sb-back, .sb-header button, .sb-transport button { min-height: 44px; }
+  .sb-icon { width: 44px; }
+  .sb-grip { width: 2rem; }
+}
+@media (prefers-reduced-motion: reduce) { .sb-beats span[style] { animation: none; } }
+
+.side:has(> .sb-studio) { padding: 0; gap: 12px; background: transparent; border: 0; }
+.sb-studio { background: var(--surface); border: 1px solid var(--line); border-radius: 16px; padding: clamp(14px, 2vw, 22px); }
+.sb-library header { flex-wrap: wrap; }
+.sb-library .results { max-height: min(52vh, 32rem); overflow-y: auto; overscroll-behavior: contain; padding: 3px; }
+.sb-library .kind > h3 { color: var(--ink); }
+.sb-library .over { outline: 2px dashed currentColor; }
+.sb-bank-settings { border-top: 1px solid var(--line); padding-top: .8rem; }
+.sb-bank-settings summary { cursor: pointer; font-weight: 600; }
+.sb-bank-settings[open] > .group { margin-top: .65rem; }
+
+
+/* What is said before someone is sent to the board's secure address to record. */
+.sb-dialog { max-width: min(30rem, calc(100vw - 32px)); padding: 22px; border: 1px solid var(--line); border-radius: 16px; background: var(--surface); color: var(--ink); }
+.sb-dialog::backdrop { background: #0008; }
+.sb-dialog h2 { font-size: 1.2rem; line-height: 1.25; margin-bottom: .7rem; }
+.sb-dialog p { margin-bottom: .7rem; color: var(--muted); }
+.sb-dialog .pair { margin-top: 1rem; }
+.sb-dialog a.act { text-decoration: none; display: inline-block; }
+.sb-dialog .field { grid-template-columns: minmax(0, 1fr); gap: 4px; margin: .8rem 0; }
+.sb-dialog .sb-notice { margin: 0 0 .8rem; }
+.sb-dialog .sb-notice.bad { background: color-mix(in srgb, var(--bad) 12%, var(--surface)); }
+.sb-dialog .sb-notice.good { background: color-mix(in srgb, var(--good) 14%, var(--surface)); }
+/* The recorder: one big button, a red dot to record and a square to stop; how loud the microphone hears it. */
+.sb-recorder { width: min(26rem, calc(100vw - 32px)); }
+.sb-mic-stage { display: grid; justify-items: center; gap: .6rem; margin: .4rem 0 1rem; }
+.sb-mic { width: 5rem; height: 5rem; border-radius: 50%; border: 3px solid var(--line); background: var(--surface); display: grid; place-items: center; }
+.sb-mic i { width: 2.4rem; height: 2.4rem; border-radius: 50%; background: #c2283f; }
+.sb-mic[aria-pressed="true"] { border-color: #c2283f; }
+.sb-mic[aria-pressed="true"] i { width: 1.8rem; height: 1.8rem; border-radius: 6px; }
+.sb-mic-time { font: 600 1.2rem/1 var(--display); font-variant-numeric: tabular-nums; }
+.sb-mic-stage small { color: var(--muted); }
+.sb-level { width: 100%; height: 8px; border-radius: 4px; background: var(--soft); overflow: hidden; }
+.sb-level i { display: block; height: 100%; width: 0; border-radius: 4px; background: var(--good); }
+.sb-level.loud i { background: var(--bad); }
+/* The cut: the recording as a picture, the part that is kept in the accent colour, and a handle at each of its ends. */
+.sb-player { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: .4rem .9rem; align-items: center; margin-bottom: .8rem; }
+.sb-player > .muted { grid-column: 2; font-size: .8rem; font-variant-numeric: tabular-nums; }
+.sb-listen { display: grid; place-items: center; width: 2.9rem; height: 2.9rem; padding: 0; border: 0; border-radius: 50%; background: var(--ink); color: var(--bg); }
+.sb-listen svg { width: 1.3rem; height: 1.3rem; fill: currentColor; }
+.sb-crop { position: relative; }
+.sb-wave { display: block; width: 100%; height: 4.5rem; border-radius: 8px; background: var(--bg); touch-action: none; cursor: text; }
+.sb-handle { position: absolute; top: 0; bottom: 0; width: 22px; margin-left: -11px; padding: 0; border: 0; background: none; cursor: ew-resize; touch-action: none; }
+.sb-handle::before { content: ''; position: absolute; top: 0; bottom: 0; left: 50%; width: 3px; margin-left: -1.5px; border-radius: 2px; background: var(--ink); }
+.sb-handle::after { content: ''; position: absolute; top: 50%; left: 50%; width: 10px; height: 26px; margin: -13px 0 0 -5px; border-radius: 5px; background: var(--ink); }
+@media (pointer: coarse) { .sb-handle { width: 40px; margin-left: -20px; } }

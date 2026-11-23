@@ -1,0 +1,41 @@
+name = "Home Assistant"
+kind = "page"
+api = 1
+version = "1.0.0"
+colour = "#a070ff"
+about = "Your Home Assistant devices on the pads. A pad can do one thing when tapped and another when held."
+needs = ["a Home Assistant in your network"]
+enabled = false
+button = "top4"
+banks = true
+holds = true
+thing = "Light or device"
+things = "Lights and devices"
+
+[actions]
+all_off = "All lights off"
+next_bank = "Next bank"
+
+[settings.address]
+label = "Address"
+type = "text"
+default = "http://homeassistant.local:8123"
+
+[settings.token]
+label = "Access token"
+type = "secret"
+bound_to = "address"
+placeholder = "Paste a long-lived access token"
+note = "Enter a new token whenever you change the address. In Home Assistant, click your name at the bottom left, open the Security tab, scroll down to Long-lived access tokens and create one. It is shown only once: copy it and paste it here."
+link = "{address}/profile/security"
+link_text = "Open that page in your Home Assistant"
+
+[settings.every]
+label = "Looks for changes every"
+type = "choice"
+default = 2
+choices = [[1, "second"], [2, "2 seconds"], [5, "5 seconds"]]
+
+[defaults.buttons]
+bottom1 = "bank:0"
+bottom8 = "all_off"

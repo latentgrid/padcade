@@ -1,0 +1,26 @@
+name = "Pixel Art"
+kind = "page"
+api = 2
+version = "1.0.0"
+colour = "#ff5fc0"
+about = "Animated scenes that react to touch, and the ones you draw yourself."
+whole = "A scene draws on all 64 pads, so only the round buttons can be changed here."
+button = "top1"
+things = "Scenes"
+
+[actions]
+previous = "Previous scene"
+next = "Next scene"
+pause = "Pause"
+
+[settings.next_after]
+label = "Next scene after"
+type = "choice"
+default = 12
+choices = [[12, "12 seconds"], [30, "30 seconds"], [60, "1 minute"], [0, "Never: only with the buttons"]]
+note = "A scene you are playing with stays until you leave it alone."
+
+[defaults.buttons]
+bottom1 = "previous"
+bottom2 = "next"
+bottom3 = "pause"

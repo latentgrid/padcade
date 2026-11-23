@@ -1,0 +1,6 @@
+name = "Code rain"
+kind = "scene"
+api = 1
+version = "1.0.0"
+colour = "#00ff46"
+about = "Green streaks fall down the columns; a press sends a fresh one down its column."

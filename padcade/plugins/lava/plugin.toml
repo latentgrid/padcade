@@ -1,0 +1,6 @@
+name = "Lava"
+kind = "scene"
+api = 1
+version = "1.0.0"
+colour = "#ff9838"
+about = "Blobs of lava rising and sinking; a press warms a new one."

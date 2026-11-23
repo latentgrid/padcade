@@ -1,0 +1,6 @@
+name = "Bricks"
+kind = "scene"
+api = 1
+version = "1.0.0"
+colour = "#ff6020"
+about = "A ball clears rows of bricks; a press held steers the paddle to that column."

@@ -1,0 +1,6 @@
+name = "Bouncer"
+kind = "scene"
+api = 1
+version = "1.0.0"
+colour = "#2878ff"
+about = "A block bounces round the pads and changes colour at every wall; a press sets another one off."

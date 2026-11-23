@@ -1,0 +1,6 @@
+name = "Paddles"
+kind = "scene"
+api = 1
+version = "1.0.0"
+colour = "#b4c8ff"
+about = "Two paddles play a ball to and fro; a press held on either side steers its paddle to that row."

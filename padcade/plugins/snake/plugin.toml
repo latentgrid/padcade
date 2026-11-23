@@ -1,0 +1,6 @@
+name = "Snake"
+kind = "scene"
+api = 1
+version = "1.0.0"
+colour = "#82ff3c"
+about = "A green snake chases an apple; a press drops the apple on that pad."

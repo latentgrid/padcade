@@ -1,0 +1,13 @@
+__pycache__/
+case/v20/*.FCStd
+/config.toml
+/config.broken
+/config.tmp
+/owner.toml
+/owner.tmp
+/state.json
+/state.tmp
+/data/
+/plugins/
+/.plugin-rollback/
+/.settings-*.tmp

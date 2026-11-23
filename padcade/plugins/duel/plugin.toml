@@ -1,0 +1,6 @@
+name = "Duel"
+kind = "game"
+api = 1
+version = "1.0.0"
+colour = "#ff00aa"
+about = "Race another player to hit your light while avoiding tricks and false starts."

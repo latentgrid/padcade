@@ -1,0 +1,6 @@
+name = "Coin"
+kind = "scene"
+api = 1
+version = "1.0.0"
+colour = "#ffd200"
+about = "A gold coin spins and glints; a press collects it before another drops in."

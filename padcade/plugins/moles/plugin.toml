@@ -1,0 +1,6 @@
+name = "Moles"
+kind = "game"
+api = 1
+version = "1.0.0"
+colour = "#c86e1e"
+about = "Hit the moles before they duck down and score as many points as you can."

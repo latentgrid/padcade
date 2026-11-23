@@ -1,0 +1,6 @@
+name = "Mines"
+kind = "game"
+api = 1
+version = "1.0.0"
+colour = "#9696a5"
+about = "Tap to uncover safe pads and hold to flag the hidden mines."

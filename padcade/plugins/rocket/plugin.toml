@@ -1,0 +1,6 @@
+name = "Rocket"
+kind = "scene"
+api = 1
+version = "1.0.0"
+colour = "#e6e6f0"
+about = "A rocket flies through falling stars; a press sends it into a warp."

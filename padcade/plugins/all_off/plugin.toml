@@ -1,0 +1,6 @@
+name = "All off"
+kind = "game"
+api = 1
+version = "1.0.0"
+colour = "#ffaa28"
+about = "Press pads to switch them and their neighbours until every light is out."

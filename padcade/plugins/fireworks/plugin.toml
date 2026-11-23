@@ -1,0 +1,6 @@
+name = "Fireworks"
+kind = "scene"
+api = 1
+version = "1.0.0"
+colour = "#ff4bce"
+about = "Colourful fireworks rise and burst; a press launches one toward that pad."

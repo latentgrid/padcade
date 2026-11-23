@@ -1,0 +1,15 @@
+name = "Marble maze"
+kind = "game"
+api = 1
+version = "1.0.0"
+colour = "#64dc64"
+about = "Tilt to roll to green, avoid red, hold the brake for narrow turns, and tap to retry."
+needs = ["Motion sensor"]
+
+[actions]
+recenter = "Hold level here"
+brake = "Brake while held"
+
+[defaults.buttons]
+right3 = "recenter"
+right4 = "brake"
